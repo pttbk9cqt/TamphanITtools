@@ -273,7 +273,7 @@
         "description": "VLC Media Player is a free and open-source multimedia player that supports a wide range of audio and video formats. It is known for its versatility and cross-platform compatibility.",
         "link": "https://www.videolan.org/vlc/",
         "winget": "VideoLAN.VLC",
-        "foss": true
+        "foss": false
     },
     "vncviewer": {
         "category": "TamPhan",
@@ -281,7 +281,7 @@
         "content": "VNC Viewer",
         "description": "VNC Viewer is a remote desktop client that allows users to connect to and control remote computers.",
         "link": "https://www.realvnc.com/en/connect/download/viewer/",
-        "foss": true
+        "foss": false
     },
     "vncserver": {
         "category": "TamPhan",
@@ -290,7 +290,7 @@
         "description": "VNC Server is a remote desktop server that allows users to share their desktop with others.",
         "link": "https://www.realvnc.com/en/connect/download/server/",
         "winget": "RealVNC.VNCServer",
-        "foss": true
+        "foss": false
     },
     "vscode": {
         "category": "TamPhan",
@@ -299,7 +299,7 @@
         "description": "Visual Studio Code is a free, open-source code editor with support for multiple programming languages.",
         "link": "https://code.visualstudio.com/",
         "winget": "Microsoft.VisualStudioCode",
-        "foss": true
+        "foss": false
     },
     "wingetui": {
         "category": "TamPhan",
