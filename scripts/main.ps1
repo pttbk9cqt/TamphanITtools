@@ -397,7 +397,7 @@ $sync["Form"].Add_Loaded({
 })
 
 $NavLogoPanel = $sync["Form"].FindName("NavLogoPanel")
-$NavLogoPanel.Children.Add((Invoke-WinUtilAssets -Type "logo" -Size 25)) | Out-Null
+$NavLogoPanel.Children.Add((New-WinUtilBecamexLogo -Width 110 -Height 68)) | Out-Null
 Initialize-WinUtilTaskbarOverlayAssets -IncludeLogo $true -IncludeStatusAssets $false
 
 Set-WinUtilTaskbaritem -overlay "logo"

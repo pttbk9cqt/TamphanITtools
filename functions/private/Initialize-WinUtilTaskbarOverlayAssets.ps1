@@ -5,7 +5,7 @@ function Initialize-WinUtilTaskbarOverlayAssets {
     )
 
     if ($IncludeLogo -and -not $sync["logorender"]) {
-        $sync["logorender"] = (Invoke-WinUtilAssets -Type "Logo" -Size 90 -Render)
+        $sync["logorender"] = (New-WinUtilBecamexTaskbarIcon -Size 512 -Render)
     }
 
     if ($IncludeStatusAssets -and -not $sync["checkmarkrender"]) {
