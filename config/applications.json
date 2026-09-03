@@ -306,7 +306,7 @@
         "category": "Becamex",
         "choco": "zalopc",
         "content": "Zalo",
-        "description": "Zalo is a popular messaging and social media app in Vietnam.",
+        "description": "Zalo is a popular messaging and social media app in Vietnam",
         "link": "https://zalo.me/",
         "winget": "VNGCorp.Zalo",
         "foss": false
