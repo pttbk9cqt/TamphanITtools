@@ -1,4 +1,12 @@
 {
+        "7Zip": {
+        "category": "Becamex",
+        "content": "7-Zip",
+        "description": "7-Zip is a free and open-source file archiver, a utility that is used to compress and extract files.",
+        "link": "https://www.7-zip.org/",
+        "winget": "7zip.7zip",
+        "foss": true
+    },
     "adobe": {
         "category": "Becamex",
         "choco": "adobereader",
@@ -118,7 +126,7 @@
     "logitechghub": {
         "category": "TamPhan",
         "choco": "logitech-g-hub",
-        "content": "Logitech G HUB",
+        "content": "Logi G HUB",
         "description": "Logitech G HUB is a software application that allows users to customize and control their Logitech G gaming peripherals.",
         "link": "https://www.logitechg.com/en-us/innovation/g-hub.html",
         "winget": "Logitech.GHUB",
@@ -127,7 +135,7 @@
     "logitechoptionplus": {
         "category": "TamPhan",
         "choco": "logitech-option-plus",
-        "content": "Logitech Option Plus",
+        "content": "Logi Option+",
         "description": "Logitech Option Plus is a software application that allows users to customize and control their Logitech peripherals.",
         "link": "https://www.logitech.com/en-us/innovation/g-hub.html",
         "winget": "Logitech.OptionPlus",
@@ -294,7 +302,7 @@
         "foss": true
     },
     "winrar": {
-        "category": "Becamex",
+        "category": "TamPhan",
         "choco": "winrar",
         "content": "WinRAR",
         "description": "WinRAR is a powerful archive manager that allows you to create, manage, and extract compressed files.",
