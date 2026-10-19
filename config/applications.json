@@ -25,6 +25,15 @@
         "winget": "Famatech.AdvancedIPScanner",
         "foss": false
     },
+        "alldup": {
+        "category": "TamPhan",
+        "choco": "alldup",
+        "content": "AllDup",
+        "description": "AllDup is a powerful tool for finding and removing duplicate files on your computer.",
+        "link": "https://www.alldup.com/",
+        "winget": "MTSD.AllDup",
+        "foss": false
+    },
     "autohotkey": {
         "category": "TamPhan",
         "choco": "autohotkey",
