@@ -319,6 +319,15 @@
         "winget": "RARLab.WinRAR",
         "foss": false
     },
+        "winmerge": {
+        "category": "TamPhan",
+        "choco": "winmerge",
+        "content": "WinMerge",
+        "description": "WinMerge is a visual file and directory comparison tool.",
+        "link": "https://winmerge.org/",
+        "winget": "WinMerge.WinMerge",
+        "foss": true
+    },
     "zalopc": {
         "category": "Becamex",
         "choco": "zalopc",
