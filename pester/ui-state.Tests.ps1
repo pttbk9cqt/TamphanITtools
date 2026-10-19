@@ -70,7 +70,6 @@ namespace System.Windows.Controls
     . (Join-Path $script:repoRoot "functions\public\Invoke-WPFGetInstalled.ps1")
     . (Join-Path $script:repoRoot "functions\public\Invoke-WPFSelectedCheckboxesUpdate.ps1")
     . (Join-Path $script:repoRoot "functions\public\Invoke-WPFButton.ps1")
-    . (Join-Path $script:repoRoot "functions\public\Invoke-WPFToggleAllCategories.ps1")
 
     function Set-WinUtilTweaksProgressIndicator {
         param($Visible, $Label, $Percent)
@@ -277,7 +276,13 @@ Describe "Invoke-WPFImpex import selection state" {
     }
 
     It "imports supported legacy selections and reports retired entries" {
-        $configPath = Join-Path $script:repoRoot "pester\fixtures\legacy-config.json"
+        $configPath = Join-Path $TestDrive "legacy-config-with-retired-entry.json"
+        [ordered]@{
+            Install = @([pscustomobject]@{ winget = "Git.Git"; choco = "git" })
+            WPFInstall = @("WPFInstallGit", "WPFInstallRetired")
+            WPFTweaks = @("WPFTweaksTelemetry")
+            WPFFeature = @("WPFFeatureSandbox")
+        } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $configPath
 
         Invoke-WPFImpex -type "import" -Config $configPath
 
@@ -541,6 +546,7 @@ Describe "Reset-WPFCheckBoxes" {
         $script:sync.WPFAppxExample = New-WinUtilFakeCheckBox
         $script:sync.WPFToggleDarkMode = New-WinUtilFakeCheckBox
         $script:sync.WPFToggleOther = New-WinUtilFakeCheckBox -IsChecked $true
+        $script:sync.WPFToggleWindowsUpdate = New-WinUtilFakeCheckBox -IsChecked $true
     }
 
     AfterEach {
@@ -553,6 +559,7 @@ Describe "Reset-WPFCheckBoxes" {
 
         $script:sync.WPFInstallGit.IsChecked | Should -BeTrue
         $script:sync.WPFInstallVlc.IsChecked | Should -BeFalse
+        $script:sync.WPFToggleWindowsUpdate.IsChecked | Should -BeTrue
         $script:sync.WPFTweaksTelemetry.IsChecked | Should -BeTrue
         $script:sync.WPFFeatureSandbox.IsChecked | Should -BeTrue
         $script:sync.WPFAppxExample.IsChecked | Should -BeTrue
@@ -568,52 +575,6 @@ Describe "Reset-WPFCheckBoxes" {
 
         $script:sync.WPFToggleDarkMode.IsChecked | Should -BeTrue
         $script:sync.WPFToggleOther.IsChecked | Should -BeTrue
-    }
-}
-
-Describe "Invoke-WPFToggleAllCategories" {
-    BeforeEach {
-        New-WinUtilUiStateTestContext
-
-        $script:sync.ItemsControl = [pscustomobject]@{
-            Items = [System.Collections.ArrayList]::new()
-        }
-    }
-
-    AfterEach {
-        Remove-Variable -Name sync -Scope Script -ErrorAction SilentlyContinue
-        Remove-Variable -Name sync -Scope Global -ErrorAction SilentlyContinue
-    }
-
-    It "expands all install categories and updates collapsed labels" {
-        $category = New-WinUtilFakeCategory -Label "+ Browsers" -Visibility ([Windows.Visibility]::Collapsed)
-        $null = $script:sync.ItemsControl.Items.Add($category)
-
-        Invoke-WPFToggleAllCategories -Action "Expand"
-
-        $category.Children[1].Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $category.Children[0].Content | Should -Be "- Browsers"
-    }
-
-    It "collapses all install categories and updates expanded labels" {
-        $category = New-WinUtilFakeCategory -Label "- Browsers" -Visibility ([Windows.Visibility]::Visible)
-        $null = $script:sync.ItemsControl.Items.Add($category)
-
-        Invoke-WPFToggleAllCategories -Action "Collapse"
-
-        $category.Children[1].Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $category.Children[0].Content | Should -Be "+ Browsers"
-    }
-
-    It "warns and exits when ItemsControl is not initialized" {
-        $script:sync.ItemsControl = $null
-        Mock Write-Warning { }
-
-        Invoke-WPFToggleAllCategories -Action "Expand"
-
-        Should -Invoke -CommandName Write-Warning -Times 1 -Exactly -ParameterFilter {
-            $Message -eq "ItemsControl not initialized"
-        }
     }
 }
 
@@ -646,13 +607,5 @@ Describe "Invoke-WPFButton progress cleanup" {
         Should -Not -Invoke Set-WinUtilTweaksProgressIndicator
     }
 
-    It "leaves progress visible while a Win11 ISO process is running" {
-        $script:sync.ProcessRunning = $false
-        $script:sync.Win11ISOProcessRunning = $true
-
-        Invoke-WPFButton -Button "WPFNoOp"
-
-        Should -Not -Invoke Set-WinUtilTweaksProgressIndicator
-    }
 }
 

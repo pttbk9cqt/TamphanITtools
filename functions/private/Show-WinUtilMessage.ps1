@@ -10,5 +10,8 @@ function Show-WinUtilMessage {
         $Icon = "Information"
     )
 
-    [System.Windows.MessageBox]::Show($Message, $Title, $Button, $Icon)
+    if ($null -ne $sync -and $null -ne $sync.Form) {
+        return [System.Windows.MessageBox]::Show($sync.Form, $Message, $Title, $Button, $Icon)
+    }
+    return [System.Windows.MessageBox]::Show($Message, $Title, $Button, $Icon)
 }

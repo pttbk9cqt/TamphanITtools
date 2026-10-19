@@ -75,6 +75,7 @@ function Invoke-WPFUIElements {
             Link        = $entryInfo.link
             Description = $entryInfo.description
             Type        = $entryInfo.type
+            Order       = $entryInfo.Order
             ComboItems  = $entryInfo.ComboItems
             ComboDescriptions = $entryInfo.ComboDescriptions
             Registry    = $entryInfo.registry
@@ -166,6 +167,8 @@ function Invoke-WPFUIElements {
 
             # Sort entries by type (checkboxes first, then buttons, then comboboxes, notes last) and then alphabetically by Content
             $entries = $organizedData[$panelKey][$category] | Sort-Object @{Expression = {
+                if ($null -ne $_.Order) { [int]$_.Order } else { [int]::MaxValue }
+            }}, @{Expression = {
                 switch ($_.Type) {
                     'Button' { 1 }
                     'Combobox' { 2 }
@@ -177,6 +180,39 @@ function Invoke-WPFUIElements {
                 $count++
                 # Create the UI elements based on the entry type
                 switch ($entryInfo.Type) {
+                    "MaintenanceToggle" {
+                        $dockPanel = New-Object Windows.Controls.DockPanel
+                        $dockPanel.Margin = "0,2,0,2"
+                        [System.Windows.Automation.AutomationProperties]::SetName($dockPanel, $entryInfo.Content)
+
+                        $checkBox = New-Object Windows.Controls.CheckBox
+                        $checkBox.Name = $entryInfo.Name
+                        $checkBox.HorizontalAlignment = "Right"
+                        $checkBox.VerticalAlignment = "Center"
+                        $checkBox.UseLayoutRounding = $true
+                        $checkBox.ToolTip = $entryInfo.Description
+                        $checkBox.Style = $ColorfulToggleSwitchStyle
+                        [Windows.Controls.DockPanel]::SetDock($checkBox, [Windows.Controls.Dock]::Right)
+                        [System.Windows.Automation.AutomationProperties]::SetName($checkBox, $entryInfo.Content)
+                        $dockPanel.Children.Add($checkBox) | Out-Null
+
+                        $label = New-Object Windows.Controls.Label
+                        $label.Content = $entryInfo.Content
+                        $label.ToolTip = $entryInfo.Description
+                        $label.VerticalAlignment = "Center"
+                        $label.SetResourceReference([Windows.Controls.Control]::FontSizeProperty, "FontSize")
+                        $label.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, "MainForegroundColor")
+                        $label.UseLayoutRounding = $true
+                        $dockPanel.Children.Add($label) | Out-Null
+                        $stackPanelContainer.Children.Add($dockPanel) | Out-Null
+
+                        $sync[$entryInfo.Name] = $checkBox
+                        $checkBox.Add_Click({
+                            [System.Object]$Sender = $args[0]
+                            Invoke-WPFMaintenanceToggle -Name $Sender.Name
+                        })
+                    }
+
                     "Toggle" {
                         $dockPanel = New-Object Windows.Controls.DockPanel
                         [System.Windows.Automation.AutomationProperties]::SetName($dockPanel, $entryInfo.Content)

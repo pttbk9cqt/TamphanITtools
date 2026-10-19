@@ -1,0 +1,1515 @@
+﻿# =====================================================================
+# IT-MAINTENANCE - Cài đặt giám sát dung lượng ổ đĩa C: và D:
+# =====================================================================
+#
+# QUY TẮC:
+#
+# Ổ C: CHỈ GIÁM SÁT VÀ CẢNH BÁO - KHÔNG ẨN, KHÔNG DISKPART
+# > 30 GB: Bình thường
+# >= 20 GB đến <= 30 GB: Cảnh báo sắp đầy
+# < 20 GB: Cảnh báo nghiêm trọng
+#
+# Ổ D:
+#
+# > 30 GB
+#   -> Bình thường
+#
+# >= 20 GB đến <= 30 GB
+#   -> Thông báo ổ đĩa sắp đầy
+#   -> Yêu cầu dọn rác
+#
+# < 20 GB
+#   -> Thông báo ổ đĩa sắp đầy
+#   -> Cho người dùng 30 phút xử lý
+#   -> Kiểm tra lại sau 30 phút
+#
+# Sau 30 phút >= 20 GB
+#   -> Không ẩn D:
+#
+# Sau 30 phút vẫn < 20 GB
+#   -> DiskPart REMOVE LETTER=D
+#
+# D: đang ẩn + dung lượng >= 20 GB
+#   -> DiskPart ASSIGN LETTER=D
+#
+# LỊCH:
+#   09:00 và 14:00
+#   Thứ Hai đến Thứ Sáu
+#
+# KHÔNG:
+#   - Xóa dữ liệu
+#   - Sửa ACL
+#   - Sửa NTFS Permission
+#   - Đặt Read-Only
+#   - Dùng NoDrives / NoViewOnDrive
+#
+# =====================================================================
+
+
+# =====================================================================
+# 0. Bắt lỗi
+# =====================================================================
+
+$ErrorActionPreference = "Stop"
+
+trap {
+
+    Write-Host ""
+    Write-Host "============================================================"
+    Write-Host "                 IT-MAINTENANCE GAP LOI"
+    Write-Host "============================================================"
+    Write-Host ""
+    Write-Host "NOI DUNG LOI:"
+    Write-Host $_.Exception.Message
+    Write-Host ""
+    Write-Host "VI TRI:"
+    Write-Host $_.InvocationInfo.PositionMessage
+    Write-Host ""
+    Write-Host "============================================================"
+    Write-Host ""
+
+    Read-Host "NHAN ENTER DE DONG"
+
+    exit 1
+}
+
+
+# =====================================================================
+# 1. Cấu hình
+# =====================================================================
+
+$InstallFolder = "C:\IT-MAINTENANCE"
+$MonitorScript = "$InstallFolder\IT-MAINTENANCE.ps1"
+$ConfigFile    = "$InstallFolder\VolumeInfo.json"
+$LogFile       = "$InstallFolder\DiskMonitor.log"
+
+$TaskName = "IT-MAINTENANCE"
+
+$DriveLetter    = "D"
+$WarningGB = 30
+$HideGB    = 20
+
+
+# =====================================================================
+# 2. Kiểm tra quyền Administrator
+# =====================================================================
+
+$Identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+
+$Principal = New-Object `
+    Security.Principal.WindowsPrincipal($Identity)
+
+$IsAdmin = $Principal.IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator
+)
+
+if (-not $IsAdmin) {
+
+    throw "CAN CHAY WINDOWS POWERSHELL BANG QUYEN RUN AS ADMINISTRATOR."
+}
+
+
+Clear-Host
+
+Write-Host ""
+Write-Host "============================================================"
+Write-Host "                  IT-MAINTENANCE"
+Write-Host "============================================================"
+Write-Host ""
+Write-Host "[1/7] DANG KIEM TRA O D:..."
+
+
+# =====================================================================
+# 3. Kiểm tra Volume D:
+# =====================================================================
+
+$Volume = Get-CimInstance `
+    Win32_Volume `
+    -Filter "DriveLetter='D:'"
+
+if ($null -eq $Volume) {
+
+    throw "KHONG TIM THAY O D:. KHI CAI DAT LAN DAU, VOLUME PHAI DANG CO KY TU D:."
+}
+
+
+$VolumeGUID = $Volume.DeviceID
+
+if ([string]::IsNullOrWhiteSpace($VolumeGUID)) {
+
+    throw "KHONG LAY DUOC VOLUME GUID CUA O D:."
+}
+
+
+# =====================================================================
+# 4. Lấy Disk Number và Partition Number của D:
+# =====================================================================
+
+Write-Host "[2/7] DANG XAC DINH DISK VA PARTITION CUA O D:..."
+
+
+$Partition = Get-Partition `
+    -DriveLetter D `
+    -ErrorAction Stop
+
+
+if ($null -eq $Partition) {
+
+    throw "KHONG XAC DINH DUOC PARTITION CUA O D:."
+}
+
+
+$DiskNumber      = $Partition.DiskNumber
+$PartitionNumber = $Partition.PartitionNumber
+
+
+Write-Host ""
+Write-Host "THONG TIN VOLUME:"
+Write-Host ""
+Write-Host "  DRIVE LETTER     : D:"
+Write-Host "  VOLUME GUID      : $VolumeGUID"
+Write-Host "  DISK NUMBER      : $DiskNumber"
+Write-Host "  PARTITION NUMBER : $PartitionNumber"
+Write-Host ""
+
+
+# =====================================================================
+# 5. Tạo thư mục cài đặt
+# =====================================================================
+
+Write-Host "[3/7] DANG TAO THU MUC C:\IT-MAINTENANCE..."
+
+
+New-Item `
+    -Path $InstallFolder `
+    -ItemType Directory `
+    -Force |
+    Out-Null
+
+
+# =====================================================================
+# 6. Lưu cấu hình Volume
+# =====================================================================
+
+$Config = [PSCustomObject]@{
+
+    VolumeGUID      = $VolumeGUID
+    DiskNumber      = $DiskNumber
+    PartitionNumber = $PartitionNumber
+    DriveLetter     = "D"
+}
+
+
+$Config |
+    ConvertTo-Json |
+    Set-Content `
+        -Path $ConfigFile `
+        -Encoding UTF8
+
+
+if (-not (Test-Path $ConfigFile)) {
+
+    throw "KHONG TAO DUOC VOLUMEINFO.JSON."
+}
+
+
+# =====================================================================
+# 7. Tạo Script giám sát chính
+# =====================================================================
+
+Write-Host "[4/7] DANG TAO IT-MAINTENANCE.PS1..."
+
+
+$ScriptContent = @'
+
+# =====================================================================
+# IT-MAINTENANCE
+# Giám sát dung lượng ổ đĩa C: và D:
+# C: chỉ giám sát/cảnh báo; D: sử dụng Volume GUID + DiskPart
+# =====================================================================
+
+$ErrorActionPreference = "Stop"
+
+$ConfigFile = "C:\IT-MAINTENANCE\VolumeInfo.json"
+$LogFile    = "C:\IT-MAINTENANCE\DiskMonitor.log"
+
+$WarningGB = 30
+$HideGB    = 20
+
+# Thời gian cho người dùng xử lý khi dung lượng xuống <20 GB.
+# Khai báo theo phút để dễ điều chỉnh.
+$WaitMinutes = 60
+$WaitSeconds = $WaitMinutes * 60
+
+
+# =====================================================================
+# Ghi nhật ký
+# =====================================================================
+
+function Write-ITLog {
+
+    param(
+        [string]$Status,
+        [string]$Message
+    )
+
+    try {
+
+        $Time = Get-Date -Format "dd/MM/yyyy HH:mm:ss"
+
+        "$Time | $Status | $Message" |
+            Out-File `
+                -FilePath $LogFile `
+                -Append `
+                -Encoding UTF8
+    }
+    catch {
+    }
+}
+
+
+# =====================================================================
+# Hiển thị thông báo cho người dùng
+#
+# Popup:
+# - Không dấu
+# - Chữ in hoa
+#
+# MSG.EXE được gọi thông qua CMD.EXE vì phương án này đã hoạt động
+# ổn định trong quá trình kiểm tra thực tế.
+# =====================================================================
+
+function Show-UserMessage {
+
+    param(
+        [string]$Message
+    )
+
+
+    $MessageFile = Join-Path `
+        $env:TEMP `
+        "IT-MAINTENANCE-MESSAGE-$PID.txt"
+
+
+    try {
+
+        # Lưu nội dung thông báo vào file tạm
+        $Message |
+            Set-Content `
+                -Path $MessageFile `
+                -Encoding Unicode
+
+
+        # Chuyển nội dung file vào MSG.EXE
+        $Command = "type `"$MessageFile`" | `"$env:SystemRoot\System32\msg.exe`" * /TIME:300"
+
+
+        # Chạy CMD riêng để gửi thông báo
+        $Process = Start-Process `
+            -FilePath "$env:SystemRoot\System32\cmd.exe" `
+            -ArgumentList "/d", "/c", $Command `
+            -WindowStyle Hidden `
+            -Wait `
+            -PassThru
+
+
+        if ($Process.ExitCode -eq 0) {
+
+            Write-ITLog `
+                "THONG BAO" `
+                "MSG.EXE DA GUI THONG BAO THANH CONG. EXITCODE=0."
+
+            return $true
+        }
+        else {
+
+            Write-ITLog `
+                "CANH BAO" `
+                "MSG.EXE TRA VE EXITCODE=$($Process.ExitCode)."
+
+            return $false
+        }
+    }
+    catch {
+
+        Write-ITLog `
+            "LOI THONG BAO" `
+            "KHONG GUI DUOC THONG BAO. $($_.Exception.Message)"
+
+        return $false
+    }
+    finally {
+
+        Remove-Item `
+            -Path $MessageFile `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
+}
+
+
+# =====================================================================
+# Chạy DiskPart
+# =====================================================================
+
+function Invoke-ITDiskPart {
+
+    param(
+        [string[]]$Commands
+    )
+
+
+    $TempFile = Join-Path `
+        $env:TEMP `
+        "IT-MAINTENANCE-DISKPART-$PID.txt"
+
+
+    try {
+
+        $Commands |
+            Set-Content `
+                -Path $TempFile `
+                -Encoding ASCII
+
+
+        $Output = & "$env:SystemRoot\System32\diskpart.exe" `
+            /s `
+            $TempFile `
+            2>&1
+
+
+        return ($Output -join " | ")
+    }
+    finally {
+
+        Remove-Item `
+            -Path $TempFile `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
+}
+
+
+# =====================================================================
+# Tìm Volume theo GUID
+# =====================================================================
+
+function Get-ITVolume {
+
+    param(
+        [string]$GUID
+    )
+
+
+    return (
+        Get-CimInstance Win32_Volume |
+            Where-Object {
+                $_.DeviceID -eq $GUID
+            } |
+            Select-Object -First 1
+    )
+}
+
+
+# =====================================================================
+# Đọc thông tin dung lượng Volume
+# =====================================================================
+
+function Get-ITDiskInfo {
+
+    param(
+        $Volume
+    )
+
+
+    if ($null -eq $Volume) {
+
+        return $null
+    }
+
+
+    if ($Volume.Capacity -le 0) {
+
+        return $null
+    }
+
+
+    $TotalGB = [math]::Round(
+        $Volume.Capacity / 1GB,
+        2
+    )
+
+
+    $FreeGB = [math]::Round(
+        $Volume.FreeSpace / 1GB,
+        2
+    )
+
+
+    $UsedGB = [math]::Round(
+        ($Volume.Capacity - $Volume.FreeSpace) / 1GB,
+        2
+    )
+
+
+    return [PSCustomObject]@{
+
+        TotalGB     = $TotalGB
+        UsedGB      = $UsedGB
+        FreeGB      = $FreeGB
+    }
+}
+
+
+# =====================================================================
+# Bắt đầu IT-MAINTENANCE
+# =====================================================================
+
+try {
+
+    Write-ITLog `
+        "BAT DAU" `
+        "BAT DAU IT-MAINTENANCE."
+
+
+    # =================================================================
+    # GIAM SAT DUNG LUONG O C:
+    # CHI CANH BAO - KHONG AN O - KHONG DISKPART - KHONG XOA DU LIEU
+    # =================================================================
+
+    $CVolume = Get-CimInstance `
+        Win32_Volume `
+        -Filter "DriveLetter='C:'"
+
+    if ($null -eq $CVolume) {
+        throw "KHONG TIM THAY O C:."
+    }
+
+    $CDiskInfo = Get-ITDiskInfo -Volume $CVolume
+
+    if ($null -eq $CDiskInfo) {
+        throw "KHONG DOC DUOC DUNG LUONG O C:."
+    }
+
+    $CTotalGB = $CDiskInfo.TotalGB
+    $CUsedGB  = $CDiskInfo.UsedGB
+    $CFreeGB  = $CDiskInfo.FreeGB
+
+    Write-ITLog `
+        "THONG TIN C" `
+        "O=C: | TONG=$CTotalGB GB | DA DUNG=$CUsedGB GB | CON TRONG=$CFreeGB GB"
+
+    if ($CFreeGB -gt $WarningGB) {
+        Write-ITLog `
+            "BINH THUONG C" `
+            "DUNG LUONG O C: BINH THUONG. CON TRONG=$CFreeGB GB."
+    }
+    elseif ($CFreeGB -ge $HideGB) {
+
+        Write-ITLog `
+            "CANH BAO C" `
+            "O C: SAP DAY. CON TRONG=$CFreeGB GB. CHI CANH BAO, KHONG THAO TAC VOI O C:."
+
+        $CMessage = @"
+THONG BAO IT-MAINTENANCE
+
+O DIA C: SAP DAY!
+
+TONG DUNG LUONG : $CTotalGB GB
+DA SU DUNG      : $CUsedGB GB
+CON TRONG       : $CFreeGB GB
+
+VUI LONG DON DEP CAC DU LIEU
+KHONG CON CAN THIET.
+
+HE THONG CHI CANH BAO.
+KHONG TU DONG THAO TAC VOI O C:.
+
+QUAN TRI VIEN
+"@
+
+        [void](Show-UserMessage -Message $CMessage)
+    }
+    else {
+
+        Write-ITLog `
+            "NGHIEM TRONG C" `
+            "O C: SAP DAY. CON TRONG CHI $CFreeGB GB. CHI CANH BAO, KHONG THAO TAC VOI O C:."
+
+        $CMessage = @"
+THONG BAO IT-MAINTENANCE
+
+CANH BAO DUNG LUONG O C:!
+
+O DIA C: SAP DAY.
+
+TONG DUNG LUONG : $CTotalGB GB
+DA SU DUNG      : $CUsedGB GB
+CON TRONG       : $CFreeGB GB
+
+DUNG LUONG TRONG DA XUONG <20 GB.
+
+VUI LONG DON DEP DU LIEU
+KHONG CON CAN THIET.
+
+HE THONG CHI CANH BAO.
+KHONG AN O C:.
+KHONG SU DUNG DISKPART VOI O C:.
+KHONG TU DONG XOA DU LIEU.
+
+QUAN TRI VIEN
+"@
+
+        [void](Show-UserMessage -Message $CMessage)
+    }
+
+
+    # =================================================================
+    # Đọc cấu hình
+    # =================================================================
+
+    if (-not (Test-Path $ConfigFile)) {
+
+        throw "KHONG TIM THAY VOLUMEINFO.JSON."
+    }
+
+
+    $Config = Get-Content `
+        -Path $ConfigFile `
+        -Raw |
+        ConvertFrom-Json
+
+
+    $VolumeGUID      = $Config.VolumeGUID
+    $DiskNumber      = [int]$Config.DiskNumber
+    $PartitionNumber = [int]$Config.PartitionNumber
+    $DriveLetter     = $Config.DriveLetter
+
+
+    if ([string]::IsNullOrWhiteSpace($VolumeGUID)) {
+
+        throw "VOLUME GUID TRONG FILE CAU HINH KHONG HOP LE."
+    }
+
+
+    if ($DriveLetter -ne "D") {
+
+        throw "DRIVE LETTER TRONG FILE CAU HINH KHONG PHAI D:. HUY THAO TAC."
+    }
+
+
+    # =================================================================
+    # Tìm Volume D: theo GUID
+    # =================================================================
+
+    $Volume = Get-ITVolume `
+        -GUID $VolumeGUID
+
+
+    if ($null -eq $Volume) {
+
+        throw "KHONG TIM THAY VOLUME THEO VOLUME GUID."
+    }
+
+
+    # =================================================================
+    # Đọc dung lượng
+    # =================================================================
+
+    $DiskInfo = Get-ITDiskInfo `
+        -Volume $Volume
+
+
+    if ($null -eq $DiskInfo) {
+
+        throw "KHONG DOC DUOC DUNG LUONG VOLUME."
+    }
+
+
+    $TotalGB     = $DiskInfo.TotalGB
+    $UsedGB      = $DiskInfo.UsedGB
+    $FreeGB      = $DiskInfo.FreeGB
+
+
+    $CurrentDriveLetter = $Volume.DriveLetter
+
+
+    $DriveIsAssigned = (
+        $CurrentDriveLetter -eq "D:"
+    )
+
+
+    Write-ITLog `
+        "THONG TIN" `
+        "O=$CurrentDriveLetter | TONG=$TotalGB GB | DA DUNG=$UsedGB GB | CON TRONG=$FreeGB GB"
+
+
+    # =================================================================
+    # A. Volume đang không có ký tự D:
+    # =================================================================
+
+    if (-not $DriveIsAssigned) {
+
+
+        # -------------------------------------------------------------
+        # Nếu dung lượng vẫn <20 GB thì giữ trạng thái ẩn
+        # -------------------------------------------------------------
+
+        if ($FreeGB -lt $HideGB) {
+
+            Write-ITLog `
+                "AN" `
+                "VOLUME DANG BI AN VA DUNG LUONG VAN <20 GB. GIU NGUYEN TRANG THAI AN."
+
+            exit 0
+        }
+
+
+        # -------------------------------------------------------------
+        # Nếu dung lượng đã >=20 GB thì tự động gán lại D:
+        # -------------------------------------------------------------
+
+        Write-ITLog `
+            "THAO TAC" `
+            "VOLUME DANG BI AN VA DUNG LUONG DA >=20 GB. BAT DAU KHOI PHUC O D:."
+
+
+        # -------------------------------------------------------------
+        # Kiểm tra ký tự D: có bị Volume khác sử dụng không
+        # -------------------------------------------------------------
+
+        $ExistingDrive = Get-CimInstance `
+            Win32_Volume `
+            -Filter "DriveLetter='D:'"
+
+
+        if ($null -ne $ExistingDrive) {
+
+            Write-ITLog `
+                "LOI" `
+                "KHONG THE KHOI PHUC D:. KY TU D: DANG DUOC VOLUME KHAC SU DUNG."
+
+
+            $Message = @"
+THONG BAO IT-MAINTENANCE
+
+DUNG LUONG TRONG DA TRO LAI >=20 GB.
+
+TUY NHIEN HE THONG KHONG THE
+TU DONG HIEN LAI O D:.
+
+LY DO:
+KY TU D: DANG DUOC VOLUME KHAC SU DUNG.
+
+VUI LONG LIEN HE QUAN TRI VIEN.
+
+QUAN TRI VIEN
+"@
+
+
+            [void](Show-UserMessage -Message $Message)
+
+            exit 1
+        }
+
+
+        # -------------------------------------------------------------
+        # Xác nhận Disk/Partition đã lưu còn tồn tại
+        # -------------------------------------------------------------
+
+        $StoredPartition = Get-Partition `
+            -DiskNumber $DiskNumber `
+            -PartitionNumber $PartitionNumber `
+            -ErrorAction SilentlyContinue
+
+
+        if ($null -eq $StoredPartition) {
+
+            throw "KHONG TIM THAY DISK/PARTITION DA LUU TRONG CAU HINH."
+        }
+
+
+        # -------------------------------------------------------------
+        # Gán lại D:
+        # -------------------------------------------------------------
+
+        Write-ITLog `
+            "THAO TAC" `
+            "BAT DAU DISKPART ASSIGN LETTER=D | DISK=$DiskNumber | PARTITION=$PartitionNumber"
+
+
+        $DiskPartResult = Invoke-ITDiskPart @(
+            "select disk $DiskNumber",
+            "select partition $PartitionNumber",
+            "assign letter=D",
+            "exit"
+        )
+
+
+        Start-Sleep -Seconds 2
+
+
+        # -------------------------------------------------------------
+        # Xác nhận D: đã được gán cho đúng Volume GUID
+        # -------------------------------------------------------------
+
+        $CheckVolume = Get-ITVolume `
+            -GUID $VolumeGUID
+
+
+        if (
+            $null -ne $CheckVolume -and
+            $CheckVolume.DriveLetter -eq "D:"
+        ) {
+
+            Write-ITLog `
+                "THANH CONG" `
+                "DA TU DONG GAN LAI O D:."
+
+
+            $Message = @"
+THONG BAO IT-MAINTENANCE
+
+O DIA D: DA DUOC TU DONG HIEN LAI.
+
+DUNG LUONG TRONG HIEN TAI:
+$FreeGB GB
+
+DUNG LUONG TRONG DA TRO LAI >=20 GB.
+
+NGUOI DUNG CO THE TIEP TUC
+TRUY CAP VA SU DUNG O D:.
+
+QUAN TRI VIEN
+"@
+
+
+            [void](Show-UserMessage -Message $Message)
+        }
+        else {
+
+            Write-ITLog `
+                "LOI" `
+                "DISKPART KHONG GAN LAI DUOC D:. KET QUA=$DiskPartResult"
+        }
+
+
+        exit 0
+    }
+
+
+    # =================================================================
+    # B. Dung lượng trống >30 GB: bình thường
+    # =================================================================
+
+    if ($FreeGB -gt $WarningGB) {
+
+        Write-ITLog `
+            "BINH THUONG" `
+            "DUNG LUONG O D: BINH THUONG. CON TRONG=$FreeGB GB."
+
+        # Neu C: dang sap day/gan day thi chi canh bao va ket thuc.
+        # Khong thuc hien CHKDSK/DEFRAG cho den khi CA C: VA D: deu >30 GB.
+        if ($CFreeGB -le $WarningGB) {
+            Write-ITLog `
+                "TAM DUNG KIEM TRA O CUNG" `
+                "O C: CON TRONG=$CFreeGB GB (<=30 GB). KHONG CHAY CHKDSK/DEFRAG TRONG LAN NAY."
+            exit 0
+        }
+
+        # =============================================================
+        # C: >30 GB VA D: >30 GB -> KIEM TRA TINH TRANG O CUNG C: VA D:
+        # CHKDSK /SCAN OK    -> DEFRAG /O
+        # CHKDSK /SCAN ERROR -> KHONG DEFRAG, THONG BAO
+        # KHONG TU DONG SUA LOI, KHONG TU DONG RESTART
+        # =============================================================
+
+        $ComputerName = $env:COMPUTERNAME
+        $HasDiskError = $false
+        $ErrorDrives  = @()
+
+        foreach ($Drive in @("C:", "D:")) {
+
+            Write-ITLog "KIEM TRA O CUNG" "BAT DAU KIEM TRA $Drive."
+
+            try {
+                $CHKResult = & chkdsk.exe $Drive /scan 2>&1
+                $CHKExitCode = $LASTEXITCODE
+
+                $CHKText = ($CHKResult | ForEach-Object { $_.ToString() }) -join " | "
+                Write-ITLog "CHKDSK" "$Drive /SCAN | EXITCODE=$CHKExitCode | $CHKText"
+
+                if ($CHKExitCode -eq 0) {
+                    Write-ITLog "CHKDSK OK" "$Drive /SCAN HOAN TAT BINH THUONG. BAT DAU DEFRAG /O."
+
+                    try {
+                        $DefragResult = & defrag.exe $Drive /O 2>&1
+                        $DefragExitCode = $LASTEXITCODE
+                        $DefragText = ($DefragResult | ForEach-Object { $_.ToString() }) -join " | "
+                        Write-ITLog "DEFRAG" "$Drive /O | EXITCODE=$DefragExitCode | $DefragText"
+
+                        if ($DefragExitCode -ne 0) {
+                            $HasDiskError = $true
+                            if ($ErrorDrives -notcontains $Drive) { $ErrorDrives += $Drive }
+                        }
+                    }
+                    catch {
+                        Write-ITLog "LOI DEFRAG" "$Drive | $($_.Exception.Message)"
+                        $HasDiskError = $true
+                        if ($ErrorDrives -notcontains $Drive) { $ErrorDrives += $Drive }
+                    }
+                }
+                else {
+                    Write-ITLog "CHKDSK ERROR" "$Drive /SCAN PHAT HIEN VAN DE. KHONG CHAY DEFRAG. EXITCODE=$CHKExitCode."
+                    $HasDiskError = $true
+                    if ($ErrorDrives -notcontains $Drive) { $ErrorDrives += $Drive }
+                }
+            }
+            catch {
+                Write-ITLog "LOI CHKDSK" "$Drive | $($_.Exception.Message)"
+                $HasDiskError = $true
+                if ($ErrorDrives -notcontains $Drive) { $ErrorDrives += $Drive }
+            }
+        }
+
+        if ($HasDiskError) {
+            $ErrorDrives = @($ErrorDrives | Select-Object -Unique)
+            $ErrorDriveText = $ErrorDrives -join ", "
+
+            Write-ITLog "KIEM TRA O CUNG ERROR" "O DIA CAN KIEM TRA: $ErrorDriveText. HE THONG KHONG TU DONG SUA LOI."
+
+            $Message = @"
+THONG BAO IT-MAINTENANCE
+
+MAY TINH: $ComputerName
+
+PHAT HIEN VAN DE TREN O DIA: $ErrorDriveText
+
+VUI LONG LIEN HE QUAN TRI VIEN
+DE DUOC KIEM TRA VA XU LY.
+
+HE THONG KHONG TU DONG SUA LOI.
+HE THONG KHONG TU DONG RESTART.
+
+QUAN TRI VIEN
+"@
+
+            [void](Show-UserMessage -Message $Message)
+            exit 1
+        }
+
+        Write-ITLog "KIEM TRA O CUNG OK" "CHKDSK VA DEFRAG C: VA D: HOAN TAT BINH THUONG."
+        exit 0
+    }
+
+
+    # =================================================================
+    # C. Dung lượng trống >=20 GB đến <=30 GB: cảnh báo
+    # =================================================================
+
+    if (
+        ($FreeGB -ge $HideGB) -and
+        ($FreeGB -le $WarningGB)
+    ) {
+
+        Write-ITLog `
+            "CANH BAO" `
+            "O D: SAP DAY. CON TRONG=$FreeGB GB."
+
+
+        $Message = @"
+THONG BAO IT-MAINTENANCE
+
+O DIA D: SAP DAY!
+
+TONG DUNG LUONG : $TotalGB GB
+DA SU DUNG      : $UsedGB GB
+CON TRONG       : $FreeGB GB
+
+VUI LONG DON RAC.
+
+VUI LONG KIEM TRA, TINH LOC VA XOA
+CAC DU LIEU KHONG CON CAN THIET.
+
+KIEM TRA THU MUC TAM, THUNG RAC
+VA CAC DU LIEU TRUNG LAP NEU CO.
+
+CAC DU LIEU CON CAN THIET CAN DUOC
+SAP XEP HOAC DI CHUYEN PHU HOP.
+
+NEU DUNG LUONG TRONG GIAM XUONG <20 GB,
+HE THONG SE THONG BAO VA CHO 60 PHUT
+DE NGUOI DUNG XU LY.
+
+NEU SAU 60 PHUT DUNG LUONG VAN <20 GB,
+HE THONG SE TAM THOI AN O D:.
+
+DU LIEU HIEN CO KHONG BI XOA.
+
+QUAN TRI VIEN
+"@
+
+
+        $MessageSent = Show-UserMessage `
+            -Message $Message
+
+
+        if ($MessageSent) {
+
+            Write-ITLog `
+                "THONG BAO" `
+                "DA GUI CANH BAO O D: SAP DAY."
+        }
+        else {
+
+            Write-ITLog `
+                "CANH BAO" `
+                "LENH GUI CANH BAO O D: SAP DAY KHONG THANH CONG."
+        }
+
+
+        exit 0
+    }
+
+
+    # =================================================================
+    # D. Dung lượng trống <20 GB
+    # =================================================================
+
+    if ($FreeGB -lt $HideGB) {
+
+
+        Write-ITLog `
+            "NGHIEM TRONG" `
+            "O D: SAP DAY. DUNG LUONG TRONG CHI CON $FreeGB GB."
+
+
+        # -------------------------------------------------------------
+        # Thông báo cho người dùng và bắt đầu thời gian xử lý 30 phút
+        # -------------------------------------------------------------
+
+        $Message = @"
+THONG BAO IT-MAINTENANCE
+
+O DIA D: SAP DAY!
+
+TONG DUNG LUONG : $TotalGB GB
+DA SU DUNG      : $UsedGB GB
+CON TRONG       : $FreeGB GB
+
+VUI LONG DON RAC NGAY.
+
+DUNG LUONG TRONG CUA O D:
+DA XUONG <20 GB.
+
+BAN CO 60 PHUT DE KIEM TRA
+VA DON DEP DU LIEU KHONG CAN THIET.
+
+HE THONG SE KIEM TRA LAI SAU 60 PHUT.
+
+NEU DUNG LUONG TRONG VAN <20 GB,
+O D: SE TAM THOI BI AN.
+
+DU LIEU HIEN CO KHONG BI XOA.
+
+QUAN TRI VIEN
+"@
+
+
+        $MessageSent = Show-UserMessage `
+            -Message $Message
+
+
+        if ($MessageSent) {
+
+            Write-ITLog `
+                "THONG BAO" `
+                "DA GUI CANH BAO DUNG LUONG O D: <20 GB."
+        }
+        else {
+
+            Write-ITLog `
+                "CANH BAO" `
+                "LENH GUI CANH BAO DUNG LUONG O D: <20 GB KHONG THANH CONG."
+        }
+
+
+        # -------------------------------------------------------------
+        # Chờ 30 phút
+        # -------------------------------------------------------------
+
+        Write-ITLog `
+            "CHO" `
+            "CHO $WaitMinutes PHUT TRUOC KHI KIEM TRA LAI."
+
+
+        Start-Sleep -Seconds $WaitSeconds
+
+
+        # =================================================================
+        # Kiểm tra lại sau 30 phút
+        # =================================================================
+
+        $VolumeAfterWait = Get-ITVolume `
+            -GUID $VolumeGUID
+
+
+        if ($null -eq $VolumeAfterWait) {
+
+            throw "KHONG TIM THAY VOLUME KHI KIEM TRA LAI SAU $WaitMinutes PHUT."
+        }
+
+
+        $NewInfo = Get-ITDiskInfo `
+            -Volume $VolumeAfterWait
+
+
+        if ($null -eq $NewInfo) {
+
+            throw "KHONG DOC DUOC DUNG LUONG SAU $WaitMinutes PHUT."
+        }
+
+
+        $NewFreeGB      = $NewInfo.FreeGB
+    
+
+        Write-ITLog `
+            "KIEM TRA LAI" `
+            "SAU $WaitMinutes PHUT: CON TRONG=$NewFreeGB GB."
+
+
+        # =================================================================
+        # Sau 30 phút nếu >=20 GB thì không ẩn D:
+        # =================================================================
+
+        if ($NewFreeGB -ge $HideGB) {
+
+            Write-ITLog `
+                "PHUC HOI" `
+                "DUNG LUONG DA >=20 GB. KHONG AN O D:."
+
+
+            $Message = @"
+THONG BAO IT-MAINTENANCE
+
+DUNG LUONG O D:
+DA TRO LAI >=20 GB.
+
+DUNG LUONG TRONG HIEN TAI:
+$NewFreeGB GB
+
+HE THONG SE KHONG AN O D:.
+
+NGUOI DUNG CO THE TIEP TUC SU DUNG.
+
+QUAN TRI VIEN
+"@
+
+
+            [void](Show-UserMessage -Message $Message)
+
+            exit 0
+        }
+
+
+        # =================================================================
+        # Sau 30 phút vẫn <20 GB: chuẩn bị gỡ ký tự D:
+        # =================================================================
+
+        Write-ITLog `
+            "NGHIEM TRONG" `
+            "SAU $WaitMinutes PHUT DUNG LUONG VAN <20 GB. BAT DAU AN O D:."
+
+
+        # -------------------------------------------------------------
+        # Xác nhận D: vẫn đang tồn tại
+        # -------------------------------------------------------------
+
+        $CurrentDrive = Get-CimInstance `
+            Win32_Volume `
+            -Filter "DriveLetter='D:'"
+
+
+        if ($null -eq $CurrentDrive) {
+
+            Write-ITLog `
+                "THONG TIN" `
+                "D: KHONG CON DUOC GAN. KHONG CAN REMOVE LAI."
+
+            exit 0
+        }
+
+
+        # -------------------------------------------------------------
+        # Bảo vệ: D: phải đúng Volume GUID đã cấu hình
+        # -------------------------------------------------------------
+
+        if ($CurrentDrive.DeviceID -ne $VolumeGUID) {
+
+            throw "D: HIEN TAI KHONG PHAI VOLUME DA DUOC IT-MAINTENANCE CAU HINH. HUY THAO TAC DISKPART."
+        }
+
+
+        # -------------------------------------------------------------
+        # Xác nhận Disk/Partition vẫn tồn tại
+        # -------------------------------------------------------------
+
+        $StoredPartition = Get-Partition `
+            -DiskNumber $DiskNumber `
+            -PartitionNumber $PartitionNumber `
+            -ErrorAction SilentlyContinue
+
+
+        if ($null -eq $StoredPartition) {
+
+            throw "KHONG TIM THAY DISK/PARTITION DA LUU. HUY THAO TAC GO D:."
+        }
+
+
+        # -------------------------------------------------------------
+        # DiskPart gỡ ký tự D:
+        # -------------------------------------------------------------
+
+        Write-ITLog `
+            "THAO TAC" `
+            "BAT DAU DISKPART REMOVE LETTER=D | DISK=$DiskNumber | PARTITION=$PartitionNumber"
+
+
+        $DiskPartResult = Invoke-ITDiskPart @(
+            "select disk $DiskNumber",
+            "select partition $PartitionNumber",
+            "remove letter=D",
+            "exit"
+        )
+
+
+        Start-Sleep -Seconds 2
+
+
+        # -------------------------------------------------------------
+        # Kiểm tra lại bằng Volume GUID
+        # -------------------------------------------------------------
+
+        $CheckVolume = Get-ITVolume `
+            -GUID $VolumeGUID
+
+
+        if (
+            $null -ne $CheckVolume -and
+            $CheckVolume.DriveLetter -ne "D:"
+        ) {
+
+            Write-ITLog `
+                "THANH CONG" `
+                "DA GO KY TU O DIA D:."
+
+
+            $Message = @"
+THONG BAO IT-MAINTENANCE
+
+O DIA D: DA DUOC TAM THOI AN.
+
+LY DO:
+
+SAU 60 PHUT,
+DUNG LUONG TRONG VAN <20 GB.
+
+DU LIEU HIEN CO KHONG BI XOA.
+
+IT-MAINTENANCE VAN TIEP TUC
+THEO DOI DUNG LUONG VOLUME.
+
+KHI DUNG LUONG TRONG TRO LAI >=20 GB,
+HE THONG SE TU DONG GAN LAI O D:.
+
+QUAN TRI VIEN
+"@
+
+
+            [void](Show-UserMessage -Message $Message)
+
+
+            Write-ITLog `
+                "THONG BAO" `
+                "DA GUI THONG BAO O D: DA DUOC TAM THOI AN."
+        }
+        else {
+
+            Write-ITLog `
+                "LOI" `
+                "DISKPART KHONG GO DUOC D:. KET QUA=$DiskPartResult"
+
+
+            $Message = @"
+THONG BAO IT-MAINTENANCE
+
+DUNG LUONG O D: VAN <20 GB.
+
+HE THONG DA THU TAM THOI AN O D:
+NHUNG THAO TAC KHONG THANH CONG.
+
+VUI LONG LIEN HE QUAN TRI VIEN.
+
+QUAN TRI VIEN
+"@
+
+
+            [void](Show-UserMessage -Message $Message)
+        }
+
+
+        exit 0
+    }
+
+}
+catch {
+
+    Write-ITLog `
+        "LOI" `
+        $_.Exception.Message
+
+    exit 1
+}
+
+'@
+
+
+# =====================================================================
+# 8. Lưu Script giám sát
+# =====================================================================
+
+Set-Content `
+    -Path $MonitorScript `
+    -Value $ScriptContent `
+    -Encoding UTF8
+
+
+if (-not (Test-Path $MonitorScript)) {
+
+    throw "KHONG TAO DUOC IT-MAINTENANCE.PS1."
+}
+
+
+Write-Host "[5/7] DA TAO IT-MAINTENANCE.PS1."
+
+
+# =====================================================================
+# 9. Kiểm tra cú pháp Script trước khi tạo Scheduled Task
+# =====================================================================
+
+$Tokens = $null
+$ParseErrors = $null
+
+
+[System.Management.Automation.Language.Parser]::ParseFile(
+    $MonitorScript,
+    [ref]$Tokens,
+    [ref]$ParseErrors
+) | Out-Null
+
+
+if ($ParseErrors.Count -gt 0) {
+
+    $ErrorText = (
+        $ParseErrors |
+        ForEach-Object {
+            $_.Message
+        }
+    ) -join " | "
+
+
+    throw "IT-MAINTENANCE.PS1 CO LOI CU PHAP: $ErrorText"
+}
+
+
+# =====================================================================
+# 10. Xóa Scheduled Task cũ nếu có
+# =====================================================================
+
+$OldTask = Get-ScheduledTask `
+    -TaskName $TaskName `
+    -ErrorAction SilentlyContinue
+
+
+if ($null -ne $OldTask) {
+
+    Write-Host "DANG XOA SCHEDULED TASK CU..."
+
+    Unregister-ScheduledTask `
+        -TaskName $TaskName `
+        -Confirm:$false
+}
+
+
+# =====================================================================
+# 11. Tạo Action cho Scheduled Task
+# =====================================================================
+
+$PowerShellExe = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+
+
+$Action = New-ScheduledTaskAction `
+    -Execute $PowerShellExe `
+    -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$MonitorScript`""
+
+
+# =====================================================================
+# 12. Tạo lịch chạy 09:00 và 14:00 từ Thứ Hai đến Thứ Sáu
+# =====================================================================
+
+$Trigger10 = New-ScheduledTaskTrigger `
+    -Weekly `
+    -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday `
+    -At "09:00"
+
+
+$Trigger14 = New-ScheduledTaskTrigger `
+    -Weekly `
+    -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday `
+    -At "14:00"
+
+
+# =====================================================================
+# 13. Chạy Scheduled Task bằng SYSTEM với quyền cao nhất
+# =====================================================================
+
+$TaskPrincipal = New-ScheduledTaskPrincipal `
+    -UserId "SYSTEM" `
+    -LogonType ServiceAccount `
+    -RunLevel Highest
+
+
+# =====================================================================
+# 14. Cấu hình Scheduled Task
+# =====================================================================
+
+$TaskSettings = New-ScheduledTaskSettingsSet `
+    -StartWhenAvailable `
+    -AllowStartIfOnBatteries `
+    -DontStopIfGoingOnBatteries
+
+
+# =====================================================================
+# 15. Đăng ký Scheduled Task
+# =====================================================================
+
+Write-Host "[6/7] DANG TAO SCHEDULED TASK..."
+
+
+Register-ScheduledTask `
+    -TaskName $TaskName `
+    -Action $Action `
+    -Trigger $Trigger10,$Trigger14 `
+    -Principal $TaskPrincipal `
+    -Settings $TaskSettings `
+    -Description "IT-MAINTENANCE - GIAM SAT C: VA D: - C: CHI CANH BAO, KHONG AN/DISKPART - D: >=20 GB DEN <=30 GB CANH BAO - D: <20 GB CANH BAO VA CHO 60 PHUT - NEU VAN <20 GB THI AN D: - TU DONG HIEN LAI D: KHI >=20 GB - CHI KIEM TRA O CUNG KHI CA C: VA D: DEU >30 GB - CHAY 09:00 VA 14:00 TU THU 2 DEN THU 6." |
+    Out-Null
+
+
+# =====================================================================
+# 16. Kiểm tra Scheduled Task
+# =====================================================================
+
+$CheckTask = Get-ScheduledTask `
+    -TaskName $TaskName `
+    -ErrorAction Stop
+
+
+if ($null -eq $CheckTask) {
+
+    throw "KHONG TAO DUOC SCHEDULED TASK IT-MAINTENANCE."
+}
+
+
+Write-Host "[7/7] HOAN TAT."
+
+
+# =====================================================================
+# 17. Hiển thị kết quả cài đặt
+# =====================================================================
+
+Write-Host ""
+Write-Host "============================================================"
+Write-Host "          CAI DAT IT-MAINTENANCE THANH CONG"
+Write-Host "============================================================"
+Write-Host ""
+Write-Host "THONG TIN VOLUME:"
+Write-Host ""
+Write-Host "   O DIA            : D:"
+Write-Host "   VOLUME GUID       : $VolumeGUID"
+Write-Host "   DISK NUMBER       : $DiskNumber"
+Write-Host "   PARTITION NUMBER  : $PartitionNumber"
+Write-Host ""
+Write-Host "------------------------------------------------------------"
+Write-Host ""
+Write-Host "QUY TAC:"
+Write-Host ""
+Write-Host "   O C: CHI GIAM SAT VA CANH BAO:"
+Write-Host "      >30 GB              : BINH THUONG"
+Write-Host "      >=20 GB DEN <=30 GB : CANH BAO SAP DAY"
+Write-Host "      <20 GB              : CANH BAO NGHIEM TRONG"
+Write-Host "      KHONG AN C: - KHONG DISKPART - KHONG TU DONG XOA DU LIEU"
+Write-Host ""
+Write-Host "   O D:"
+Write-Host "   >30 GB"
+Write-Host "      BINH THUONG"
+Write-Host ""
+Write-Host "   >=20 GB DEN <=30 GB"
+Write-Host "      THONG BAO O DIA SAP DAY"
+Write-Host "      YEU CAU DON DEP DU LIEU"
+Write-Host ""
+Write-Host "   <20 GB"
+Write-Host "      THONG BAO O DIA SAP DAY"
+Write-Host "      CHO NGUOI DUNG 60 PHUT XU LY"
+Write-Host "      KIEM TRA LAI SAU 60 PHUT"
+Write-Host ""
+Write-Host "   SAU 60 PHUT >=20 GB"
+Write-Host "      KHONG AN D:"
+Write-Host ""
+Write-Host "   SAU 60 PHUT VAN <20 GB"
+Write-Host "      DISKPART REMOVE LETTER=D"
+Write-Host ""
+Write-Host "   D: DANG AN + DUNG LUONG >=20 GB"
+Write-Host "      DISKPART ASSIGN LETTER=D"
+Write-Host ""
+Write-Host "------------------------------------------------------------"
+Write-Host ""
+Write-Host "KIEM TRA O CUNG:"
+Write-Host "   CHI CHAY KHI CA C: VA D: DEU CON TRONG >30 GB"
+Write-Host "   CHKDSK /SCAN OK -> DEFRAG /O"
+Write-Host ""
+Write-Host "------------------------------------------------------------"
+Write-Host ""
+Write-Host "LICH:"
+Write-Host ""
+Write-Host "   09:00 - THU 2 DEN THU 6"
+Write-Host "   14:00 - THU 2 DEN THU 6"
+Write-Host ""
+Write-Host "------------------------------------------------------------"
+Write-Host ""
+Write-Host "SCRIPT:"
+Write-Host "   C:\IT-MAINTENANCE\IT-MAINTENANCE.ps1"
+Write-Host ""
+Write-Host "CAU HINH:"
+Write-Host "   C:\IT-MAINTENANCE\VolumeInfo.json"
+Write-Host ""
+Write-Host "NHAT KY:"
+Write-Host "   C:\IT-MAINTENANCE\DiskMonitor.log"
+Write-Host ""
+Write-Host "SCHEDULED TASK:"
+Write-Host "   IT-MAINTENANCE"
+Write-Host ""
+Write-Host "============================================================"
+Write-Host ""
+Write-Host "CHAY THU:"
+Write-Host ""
+Write-Host 'Start-ScheduledTask -TaskName "IT-MAINTENANCE"'
+Write-Host ""
+Write-Host "XEM NHAT KY:"
+Write-Host ""
+Write-Host 'Get-Content "C:\IT-MAINTENANCE\DiskMonitor.log" -Tail 30'
+Write-Host ""
+Write-Host "============================================================"
+Write-Host ""
+
+Read-Host "CAI DAT HOAN TAT. NHAN ENTER DE DONG"

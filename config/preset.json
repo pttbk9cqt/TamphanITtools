@@ -10,7 +10,6 @@
     "WPFTweaksDeliveryOptimization",
     "WPFTweaksDiskCleanup",
     "WPFTweaksDeleteTempFiles",
-    "WPFTweaksEndTaskOnTaskbar",
     "WPFTweaksRestorePoint"
   ],
   "Minimal": [
@@ -30,7 +29,6 @@
     "WPFTweaksTelemetry",
     "WPFTweaksDeliveryOptimization",
     "WPFTweaksDeleteTempFiles",
-    "WPFTweaksEndTaskOnTaskbar",
     "WPFTweaksDisableStoreSearch",
     "WPFTweaksRevertStartMenu",
     "WPFTweaksWidget",

@@ -8,15 +8,19 @@ function Invoke-WPFUpdatesdisable {
         Disabling Windows Update is not recommended. This is only for advanced users who know what they are doing.
 
     #>
-    $confirmation = Show-WinUtilMessage `
-        -Message "Disabling Windows Update stops update services, disables scheduled tasks, and clears downloaded update files. Security updates will not be installed until defaults are restored. Continue?" `
-        -Title "Disable Windows Update?" `
-        -Button "YesNo" `
-        -Icon "Warning"
+    param([switch]$SkipConfirmation)
 
-    if ($confirmation -ne "Yes") {
-        Write-WinUtilLog -Component "Updates" -Message "Windows Update disable workflow cancelled."
-        return
+    if (-not $SkipConfirmation) {
+        $confirmation = Show-WinUtilMessage `
+            -Message "Disabling Windows Update stops update services, disables scheduled tasks, and clears downloaded update files. Security updates will not be installed until defaults are restored. Continue?" `
+            -Title "Disable Windows Update?" `
+            -Button "YesNo" `
+            -Icon "Warning"
+
+        if ($confirmation -ne "Yes") {
+            Write-WinUtilLog -Component "Updates" -Message "Windows Update disable workflow cancelled."
+            return
+        }
     }
 
     Write-WinUtilLog -Component "Updates" -Message "Disabling Windows Update settings."

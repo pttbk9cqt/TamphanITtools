@@ -1,6 +1,6 @@
 {
         "7Zip": {
-        "category": "Becamex",
+        "category": "TamPhan",
         "content": "7-Zip",
         "description": "7-Zip is a free and open-source file archiver, a utility that is used to compress and extract files.",
         "link": "https://www.7-zip.org/",
@@ -61,13 +61,22 @@
         "winget": "TGRMNSoftware.BulkRenameUtility",
         "foss": false
     },
-    "chatgpt": {
+    "chatgptclassic": {
         "category": "TamPhan",
         "choco": "na",
         "content": "ChatGPT Classic",
         "description": "The official ChatGPT desktop classic app for Windows, distributed through the Microsoft Store.",
         "link": "https://apps.microsoft.com/detail/9nt1r1c2hh7j",
         "winget": "msstore:9NT1R1C2HH7J",
+        "foss": false
+    },
+        "chatgptcodex": {
+        "category": "Becamex",
+        "choco": "na",
+        "content": "ChatGPT Codex",
+        "description": "The official ChatGPT desktop project app for Windows, distributed through the Microsoft Store.",
+        "link": "https://apps.microsoft.com/detail/9PLM9XGG6VKS",
+        "winget": "msstore:9PLM9XGG6VKS",
         "foss": false
     },
     "chrome": {
@@ -311,7 +320,7 @@
         "foss": true
     },
     "winrar": {
-        "category": "TamPhan",
+        "category": "Becamex",
         "choco": "winrar",
         "content": "WinRAR",
         "description": "WinRAR is a powerful archive manager that allows you to create, manage, and extract compressed files.",

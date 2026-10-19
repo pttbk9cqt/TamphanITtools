@@ -183,99 +183,6 @@
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/services"
   },
-  "WPFTweaksBraveDebloat": {
-    "Content": "Brave Browser - Debloat",
-    "Description": "Disables various annoyances like Brave Rewards, Leo AI, Crypto Wallet and VPN.",
-    "category": "z__Advanced Tweaks - CAUTION",
-    "panel": "1",
-    "registry": [
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "BraveRewardsDisabled",
-        "Value": "1",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "BraveWalletDisabled",
-        "Value": "1",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "BraveVPNDisabled",
-        "Value": "1",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "BraveAIChatEnabled",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "BraveStatsPingEnabled",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "BraveNewsDisabled",
-        "Value": "1",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "BraveTalkDisabled",
-        "Value": "1",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "TorDisabled",
-        "Value": "1",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "BraveP3AEnabled",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "UrlKeyedAnonymizedDataCollectionEnabled",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "SafeBrowsingExtendedReportingEnabled",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
-        "Name": "MetricsReportingEnabled",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      }
-    ],
-    "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/bravedebloat"
-  },
   "WPFTweaksDisableWarningForUnsignedRdp": {
     "Content": "RDP Unsigned File Warnings - Disable",
     "Description": "Disables warnings shown when launching unsigned RDP files introduced with the latest Windows 10 and 11 updates.",
@@ -852,22 +759,6 @@
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/restorepoint"
   },
-  "WPFTweaksEndTaskOnTaskbar": {
-    "Content": "End Task With Right Click - Enable",
-    "Description": "Enables option to end task when right clicking a program in the taskbar.",
-    "category": "Essential Tweaks",
-    "panel": "1",
-    "registry": [
-      {
-        "Path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings",
-        "Name": "TaskbarEndTask",
-        "Value": "1",
-        "Type": "DWord",
-        "OriginalValue": "<RemoveEntry>"
-      }
-    ],
-    "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/endtaskontaskbar"
-  },
   "WPFTweaksStorage": {
     "Content": "Storage Sense - Disable",
     "Description": "Storage Sense deletes temp files automatically.",
@@ -959,47 +850,6 @@
       }
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/preventdevicemetadatafromnetwork"
-  },
-  "WPFTweaksRazerBlock": {
-    "Content": "Razer Software Auto-Install - Disable",
-    "Description": "Blocks ALL Razer Software installations. The hardware works fine without any software.",
-    "category": "z__Advanced Tweaks - CAUTION",
-    "panel": "1",
-    "registry": [
-      {
-        "Path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\DriverSearching",
-        "Name": "SearchOrderConfig",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "1"
-      },
-      {
-        "Path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Device Installer",
-        "Name": "DisableCoInstallers",
-        "Value": "1",
-        "Type": "DWord",
-        "OriginalValue": "0"
-      }
-    ],
-    "InvokeScript": [
-      "
-      $RazerPath = \"$Env:SystemRoot\\Installer\\Razer\"
-
-      if (Test-Path $RazerPath) {
-        Remove-Item $RazerPath\\* -Recurse -Force
-      } else {
-        New-Item -Path $RazerPath -ItemType Directory
-      }
-
-      icacls $RazerPath /deny \"Everyone:(W)\"
-      "
-    ],
-    "UndoScript": [
-      "
-      icacls \"$Env:SystemRoot\\Installer\\Razer\" /remove:d Everyone
-      "
-    ],
-    "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/razerblock"
   },
   "WPFTweaksDisableNotifications": {
     "Content": "System Tray Notifications & Calendar - Disable",
@@ -1266,48 +1116,6 @@
       }
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/batterypercentage"
-  },
-  "WPFToggleDarkMode": {
-    "Content": "Dark Theme for Windows",
-    "Description": "Dark Mode for the system and applications.",
-    "category": "Customize Preferences",
-    "panel": "2",
-    "Type": "Toggle",
-    "registry": [
-      {
-        "Path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-        "Name": "AppsUseLightTheme",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "1",
-        "DefaultState": "false"
-      },
-      {
-        "Path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-        "Name": "SystemUsesLightTheme",
-        "Value": "0",
-        "Type": "DWord",
-        "OriginalValue": "1",
-        "DefaultState": "false"
-      }
-    ],
-    "InvokeScript": [
-      "
-      Invoke-WinUtilExplorerUpdate
-      if ($sync.ThemeButton.Content -eq [char]0xF08C) {
-        Invoke-WinutilThemeChange -theme \"Auto\"
-      }
-      "
-    ],
-    "UndoScript": [
-      "
-      Invoke-WinUtilExplorerUpdate
-      if ($sync.ThemeButton.Content -eq [char]0xF08C) {
-        Invoke-WinutilThemeChange -theme \"Auto\"
-      }
-      "
-    ],
-    "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/darkmode"
   },
   "WPFToggleShowExt": {
     "Content": "File Explorer File Extensions",

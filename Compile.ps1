@@ -31,15 +31,27 @@ Get-ChildItem config | ForEach-Object {
     $script += "`$sync.configs.$($_.BaseName) = @'`r`n$json`r`n'@ | ConvertFrom-Json"
 }
 
+$maintenanceScripts = [ordered]@{}
+Get-ChildItem -Path maintenance -Filter *.ps1 -File | ForEach-Object {
+    $body = Get-Content -LiteralPath $_.FullName -Raw -Encoding UTF8
+    $maintenanceScripts[$_.BaseName] = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($body))
+}
+$payloadJson = $maintenanceScripts | ConvertTo-Json
+$script += "`$sync.configs.maintenanceScripts = @'`r`n$payloadJson`r`n'@ | ConvertFrom-Json"
+
+$originalMaintenanceFiles = [ordered]@{}
+Get-ChildItem -LiteralPath maintenance/original -File | ForEach-Object {
+    $originalMaintenanceFiles[$_.Name] = [Convert]::ToBase64String([IO.File]::ReadAllBytes($_.FullName))
+}
+$originalPayloadJson = $originalMaintenanceFiles | ConvertTo-Json
+$script += "`$sync.configs.maintenanceOriginalFiles = @'`r`n$originalPayloadJson`r`n'@ | ConvertFrom-Json"
+
 $xaml = Get-Content -Path xaml\inputXML.xaml -Raw
 $script += "`$inputXML = @'`r`n$xaml`r`n'@"
 
-$autounattendXml = Get-Content -Path tools\autounattend.xml -Raw
-$script += "`$WinUtilAutounattendXml = @'`r`n$autounattendXml`r`n'@"
-
 $script += Get-Content -Path scripts\main.ps1 -Raw
 
-Set-Content -Path winutil.ps1 -Value $script
+Set-Content -Path winutil.ps1 -Value $script -Encoding UTF8
 
 if ($Run) {
     .\Winutil.ps1

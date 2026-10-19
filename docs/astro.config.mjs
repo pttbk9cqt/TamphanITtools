@@ -48,8 +48,8 @@ export default defineConfig({
 						{ label: 'Tweaks', slug: 'guides/tweaks' },
 						{ label: 'Features', slug: 'guides/features' },
 						{ label: 'Updates', slug: 'guides/updates' },
+						{ label: 'Maintenance', slug: 'guides/maintenance' },
 						{ label: 'Automation', slug: 'guides/automation' },
-						{ label: 'Win11 Creator', slug: 'guides/win11creator' },
 					],
 				},
 				{

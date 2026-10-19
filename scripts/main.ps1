@@ -33,7 +33,6 @@ $sync.configs.appxHashtable = @{}
 $sync.configs.appx.PSObject.Properties | ForEach-Object {
     $sync.configs.appxHashtable[$_.Name] = $_.Value
 }
-$sync.preferences.theme = "Auto"
 $sync.preferences.packagemanager = "Winget"
 
 if ($Preset) {
@@ -94,36 +93,7 @@ if (-NOT ($readerOperationSuccessful)) {
     exit 1
 }
 
-# Setup the Window to follow listen for windows Theme Change events and update the winutil theme
-# throttle logic needed, because windows seems to send more than one theme change event per change
-$lastThemeChangeTime = [datetime]::MinValue
-$debounceInterval = [timespan]::FromSeconds(2)
-$sync.Form.Add_Loaded({
-    $interopHelper = New-Object System.Windows.Interop.WindowInteropHelper $sync.Form
-    $hwndSource = [System.Windows.Interop.HwndSource]::FromHwnd($interopHelper.Handle)
-    $hwndSource.AddHook({
-        param (
-            [System.IntPtr]$hwnd,
-            [int]$msg,
-            [System.IntPtr]$wParam,
-            [System.IntPtr]$lParam,
-            [ref]$handled
-        )
-        $null = $hwnd, $wParam, $lParam
-        # Check for the Event WM_SETTINGCHANGE (0x1001A) and validate that Button shows the icon for "Auto" => [char]0xF08C
-        if (($msg -eq 0x001A) -and $sync.ThemeButton.Content -eq [char]0xF08C) {
-            $currentTime = [datetime]::Now
-            if ($currentTime - $lastThemeChangeTime -gt $debounceInterval) {
-                Invoke-WinutilThemeChange -theme "Auto"
-                $script:lastThemeChangeTime = $currentTime
-                $handled = $true
-            }
-        }
-        return 0
-    })
-})
-
-Invoke-WinutilThemeChange -theme $sync.preferences.theme
+Initialize-WinUtilTheme
 
 
 # Build only the default tab before first paint; other tabs initialize on first activation.
@@ -199,9 +169,6 @@ $sync.SearchBarClearButton.Add_Click({
     $sync.SearchBar.SelectAll()
 })
 
-# add some shortcuts for people that don't like clicking
-function Invoke-WinUtilFontScaleStep([double]$Step) { $sync.FontScalingSlider.Value = [math]::Max(0.75, [math]::Min(2.0, $sync.FontScalingSlider.Value + $Step)); Invoke-WinUtilFontScaling -ScaleFactor $sync.FontScalingSlider.Value }
-
 $commonKeyEvents = {
     # Prevent shortcuts from executing if a process is already running
     if ($sync.ProcessRunning -eq $true) {
@@ -219,8 +186,7 @@ $commonKeyEvents = {
             "I" { Invoke-WPFButton "WPFTab1BT"; $keyEventArgs.Handled = $true } # Navigate to Install tab and suppress Windows Warning Sound
             "T" { Invoke-WPFButton "WPFTab2BT"; $keyEventArgs.Handled = $true } # Navigate to Tweaks tab
             "C" { Invoke-WPFButton "WPFTab3BT"; $keyEventArgs.Handled = $true } # Navigate to Config tab
-            "U" { Invoke-WPFButton "WPFTab4BT"; $keyEventArgs.Handled = $true } # Navigate to Updates tab
-            "W" { Invoke-WPFButton "WPFTab5BT"; $keyEventArgs.Handled = $true } # Navigate to Win11ISO tab
+            "M" { Invoke-WPFButton "WPFTab4BT"; $keyEventArgs.Handled = $true } # Navigate to Maintenance tab
         }
     }
     # Handle Ctrl key combinations for specific actions
@@ -231,22 +197,11 @@ $commonKeyEvents = {
             "Q" { $this.Close() } # Close the application
         }
     }
-    $ctrlShiftModifiers = [Windows.Input.ModifierKeys]::Control -bor [Windows.Input.ModifierKeys]::Shift
-    if ($_.KeyboardDevice.Modifiers -eq "Ctrl" -or $_.KeyboardDevice.Modifiers -eq $ctrlShiftModifiers) {
-        $keyEventArgs = $_
-        switch ($_.Key) {
-            { $_ -in "OemPlus", "Add" } { Invoke-WinUtilFontScaleStep 0.05; $keyEventArgs.Handled = $true }
-            { $_ -in "OemMinus", "Subtract" } { Invoke-WinUtilFontScaleStep -0.05; $keyEventArgs.Handled = $true }
-        }
-    }
 }
 $sync["Form"].Add_PreViewKeyDown($commonKeyEvents)
-$sync["Form"].Add_PreviewMouseWheel({
-    if ([Windows.Input.Keyboard]::Modifiers -eq "Ctrl") { Invoke-WinUtilFontScaleStep $(if ($_.Delta -gt 0) { 0.05 } else { -0.05 }); $_.Handled = $true }
-})
 
 $sync["Form"].Add_MouseLeftButtonDown({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings", "Theme", "FontScaling")
+    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
     $sync["Form"].DragMove()
 })
 
@@ -263,7 +218,7 @@ $sync["Form"].Add_MouseDoubleClick({
 })
 
 $sync["Form"].Add_Deactivated({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings", "Theme", "FontScaling")
+    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
 })
 
 $sync["Form"].Add_ContentRendered({
@@ -362,7 +317,6 @@ $sync.AppCategoryChips = @(
     @{ Name = "WPFSearchChipBrowsers";        Category = "Browsers" }
     @{ Name = "WPFSearchChipCommunications";  Category = "Communications" }
     @{ Name = "WPFSearchChipDevelopment";     Category = "Development" }
-    @{ Name = "WPFSearchChipDocument";        Category = "Document" }
     @{ Name = "WPFSearchChipGames";           Category = "Games" }
     @{ Name = "WPFSearchChipMicrosoftTools";  Category = "Microsoft Tools" }
     @{ Name = "WPFSearchChipMultimediaTools"; Category = "Multimedia Tools" }
@@ -380,7 +334,6 @@ $sync["WPFSearchChipAll"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this 
 $sync["WPFSearchChipBrowsers"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
 $sync["WPFSearchChipCommunications"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
 $sync["WPFSearchChipDevelopment"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipDocument"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
 $sync["WPFSearchChipGames"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
 $sync["WPFSearchChipMicrosoftTools"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
 $sync["WPFSearchChipMultimediaTools"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
@@ -406,24 +359,8 @@ $sync["Form"].Add_Activated({
     Set-WinUtilTaskbaritem -overlay "logo"
 })
 
-$sync["ThemeButton"].Add_Click({
-    Invoke-WPFPopup -PopupActionTable @{ "Settings" = "Hide"; "Theme" = "Toggle"; "FontScaling" = "Hide" }
-})
-$sync["AutoThemeMenuItem"].Add_Click({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Theme")
-    Invoke-WinutilThemeChange -theme "Auto"
-})
-$sync["DarkThemeMenuItem"].Add_Click({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Theme")
-    Invoke-WinutilThemeChange -theme "Dark"
-})
-$sync["LightThemeMenuItem"].Add_Click({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Theme")
-    Invoke-WinutilThemeChange -theme "Light"
-})
-
 $sync["SettingsButton"].Add_Click({
-    Invoke-WPFPopup -PopupActionTable @{ "Settings" = "Toggle"; "Theme" = "Hide"; "FontScaling" = "Hide" }
+    Invoke-WPFPopup -Action "Toggle" -Popups @("Settings")
 })
 $sync["ImportMenuItem"].Add_Click({
     Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
@@ -465,68 +402,6 @@ $sync["SponsorMenuItem"].Add_Click({
         $authorInfo += "An error occurred while fetching or processing the sponsors: $_`n"
     }
     Show-CustomDialog -Title "Sponsors" -Message $authorInfo -EnableScroll $true
-})
-
-# Font Scaling Event Handlers
-$sync["FontScalingButton"].Add_Click({
-    Invoke-WPFPopup -PopupActionTable @{ "Settings" = "Hide"; "Theme" = "Hide"; "FontScaling" = "Toggle" }
-})
-
-$sync["FontScalingSlider"].Add_ValueChanged({
-    param($slider)
-    $percentage = [math]::Round($slider.Value * 100)
-    $sync.FontScalingValue.Text = "$percentage%"
-})
-
-$sync["FontScalingResetButton"].Add_Click({
-    $sync.FontScalingSlider.Value = 1.0
-    $sync.FontScalingValue.Text = "100%"
-})
-
-$sync["FontScalingApplyButton"].Add_Click({
-    $scaleFactor = $sync.FontScalingSlider.Value
-    Invoke-WinUtilFontScaling -ScaleFactor $scaleFactor
-    Invoke-WPFPopup -Action "Hide" -Popups @("FontScaling")
-})
-
-# ── Win11ISO Tab button handlers ──────────────────────────────────────────────
-
-$sync["WPFWin11ISOBrowseButton"].Add_Click({
-    Invoke-WinUtilISOBrowse
-})
-
-$sync["WPFWin11ISODownloadLink"].Add_Click({
-    Start-Process "https://www.microsoft.com/software-download/windows11"
-})
-
-$sync["WPFWin11ISOMountButton"].Add_Click({
-    Invoke-WinUtilISOMountAndVerify
-})
-
-$sync["WPFWin11ISOModifyButton"].Add_Click({
-    Invoke-WinUtilISOModify
-})
-
-$sync["WPFWin11ISOChooseISOButton"].Add_Click({
-    $sync["WPFWin11ISOOptionUSB"].Visibility = "Collapsed"
-    Invoke-WinUtilISOExport
-})
-
-$sync["WPFWin11ISOChooseUSBButton"].Add_Click({
-    $sync["WPFWin11ISOOptionUSB"].Visibility = "Visible"
-    Invoke-WinUtilISORefreshUSBDrives
-})
-
-$sync["WPFWin11ISORefreshUSBButton"].Add_Click({
-    Invoke-WinUtilISORefreshUSBDrives
-})
-
-$sync["WPFWin11ISOWriteUSBButton"].Add_Click({
-    Invoke-WinUtilISOWriteUSB
-})
-
-$sync["WPFWin11ISOCleanResetButton"].Add_Click({
-    Invoke-WinUtilISOCleanAndReset
 })
 
 function Remove-WinUtilTempScript {

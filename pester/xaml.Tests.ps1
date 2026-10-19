@@ -69,7 +69,7 @@ BeforeAll {
 
     function script:Get-WinUtilGeneratedControlNames {
         $names = New-Object System.Collections.Generic.List[string]
-        foreach ($configName in @("appnavigation", "tweaks", "feature", "appx")) {
+        foreach ($configName in @("appnavigation", "tweaks", "feature", "appx", "maintenance")) {
             $config = Get-WinUtilConfigObject -Name $configName
             foreach ($entry in $config.PSObject.Properties.Name) {
                 $names.Add($entry)
@@ -128,12 +128,10 @@ Describe "XAML document" {
             "WPFTab3",
             "WPFTab4",
             "WPFTab5",
-            "WPFTab6",
             "WPFTab1BT",
             "WPFTab2BT",
             "WPFTab3BT",
             "WPFTab4BT",
-            "WPFTab5BT",
             "SearchBar",
             "SearchBarIcon",
             "SearchBarClearButton",
@@ -142,7 +140,6 @@ Describe "XAML document" {
             "WPFSearchChipBrowsers",
             "WPFSearchChipCommunications",
             "WPFSearchChipDevelopment",
-            "WPFSearchChipDocument",
             "WPFSearchChipGames",
             "WPFSearchChipMicrosoftTools",
             "WPFSearchChipMultimediaTools",
@@ -153,6 +150,7 @@ Describe "XAML document" {
             "appspanel",
             "tweakspanel",
             "featurespanel",
+            "maintenancepanel",
             "appxpanel",
             "WPFstandard",
             "WPFminimal",
@@ -162,9 +160,6 @@ Describe "XAML document" {
             "WPFAppxRemoval",
             "WPFTweaksbutton",
             "WPFUndoall",
-            "WPFUpdatesdefault",
-            "WPFUpdatessecurity",
-            "WPFUpdatesdisable",
             "WPFDefaultAppxSelection",
             "WPFGetInstalledAppx",
             "WPFSelectAllAppx",
@@ -180,66 +175,25 @@ Describe "XAML document" {
         }
     }
 
-    It "wires the Document search chip to an existing Document category" {
+    It "omits the retired Document search chip and its startup wiring" {
         $mainScript = Get-Content -Path $script:mainScriptPath -Raw
-        $mainScript | Should -Match '@\{ Name = "WPFSearchChipDocument";\s+Category = "Document" \}'
-        $mainScript | Should -Match '\$sync\["WPFSearchChipDocument"\]\.Add_Click\(\{ Invoke-WinUtilAppCategoryChip -Chip \$this \}\)'
-
-        $applications = Get-WinUtilConfigObject -Name "applications"
-        $categories = @($applications.PSObject.Properties | ForEach-Object { $_.Value.category } | Sort-Object -Unique)
-        $categories | Should -Contain "Document"
+        $script:xaml.SelectSingleNode('//*[@Name="WPFSearchChipDocument"]') | Should -BeNullOrEmpty
+        $mainScript | Should -Not -Match 'WPFSearchChipDocument'
     }
 
-    It "presents the three Updates profiles with accurate action labels" {
-        $updatesTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab4"]')
-        $profileGrid = $updatesTab.SelectSingleNode('.//*[local-name()="UniformGrid"]')
-        $expectedButtons = @{
-            WPFUpdatessecurity = "Apply Recommended"
-            WPFUpdatesdefault = "Restore Defaults"
-            WPFUpdatesdisable = "Disable Updates"
-        }
-
-        $profileGrid.GetAttribute("Columns") | Should -Be "3"
-        foreach ($buttonName in $expectedButtons.Keys) {
-            $button = $updatesTab.SelectSingleNode(".//*[local-name()='Button'][@Name='$buttonName']")
-            $button.GetAttribute("Content") | Should -Be $expectedButtons[$buttonName]
-        }
-        $updatesTab.SelectSingleNode('.//*[@Name="updatespanel"]') | Should -BeNullOrEmpty
-    }
-
-    It "contains Win11 Creator controls used by the ISO workflow" {
-        $xamlNames = @(Get-WinUtilXamlRuntimeNamedControls | ForEach-Object { $_.Name })
-        $requiredControls = @(
-            "Win11ISOPanel",
-            "WPFWin11ISOSelectSection",
-            "WPFWin11ISOPath",
-            "WPFWin11ISOBrowseButton",
-            "WPFWin11ISOFileInfo",
-            "WPFWin11ISODownloadLink",
-            "WPFWin11ISOMountSection",
-            "WPFWin11ISOMountButton",
-            "WPFWin11ISOInjectDrivers",
-            "WPFWin11ISOVerifyResultPanel",
-            "WPFWin11ISOMountDriveLetter",
-            "WPFWin11ISOArchLabel",
-            "WPFWin11ISOEditionComboBox",
-            "WPFWin11ISOModifySection",
-            "WPFWin11ISOModifyButton",
-            "WPFWin11ISOOutputSection",
-            "WPFWin11ISOCleanResetButton",
-            "WPFWin11ISOChooseISOButton",
-            "WPFWin11ISOChooseUSBButton",
-            "WPFWin11ISOOptionUSB",
-            "WPFWin11ISOUSBDriveComboBox",
-            "WPFWin11ISORefreshUSBButton",
-            "WPFWin11ISOWriteUSBButton",
-            "WPFWin11ISOStatusLog"
-        )
-
-        $missingControls = @($requiredControls | Where-Object { -not (Test-WinUtilNameInSet -Name $_ -Set $xamlNames) })
-        if ($missingControls.Count -gt 0) {
-            throw ($missingControls -join "`n")
-        }
+    It "renders the compact Maintenance controls from one config panel" {
+        $maintenanceTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Header="Maintenance"]')
+        $panel = $maintenanceTab.SelectSingleNode('.//*[@Name="maintenancepanel"]')
+        [int]$panel.GetAttribute('Width') | Should -BeLessOrEqual 440
+        $panel.GetAttribute('HorizontalAlignment') | Should -Be 'Left'
+        @($maintenanceTab.SelectNodes('.//*[local-name()="CheckBox"]')).Count | Should -Be 0
+        $maintenanceTab.SelectSingleNode('.//*[local-name()="UniformGrid"]') | Should -BeNullOrEmpty
+        $script:xaml.SelectSingleNode('//*[@Name="WPFUpdatesdefault" or @Name="WPFUpdatesdisable"]') | Should -BeNullOrEmpty
+        $renderer = Get-Content -Path (Join-Path $script:repoRoot 'functions/public/Invoke-WPFUIElements.ps1') -Raw
+        $renderer | Should -Match '"MaintenanceToggle"'
+        $renderer | Should -Match 'Invoke-WPFMaintenanceToggle -Name \$Sender\.Name'
+        $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Header="Updates"]') | Should -BeNullOrEmpty
+        $script:xaml.SelectSingleNode('//*[@Name="WPFUpdatessecurity"]') | Should -BeNullOrEmpty
     }
 
     It "defines core tabs in the expected order" {
@@ -249,9 +203,8 @@ Describe "XAML document" {
             "WPFTab1:Install",
             "WPFTab2:Tweaks",
             "WPFTab3:Config",
-            "WPFTab4:Updates",
-            "WPFTab5:Win11ISO",
-            "WPFTab6:AppX"
+            "WPFTab4:Maintenance",
+            "WPFTab5:AppX"
         )
 
         if (@($actualTabs).Count -ne $expectedTabs.Count) {
@@ -268,7 +221,7 @@ Describe "XAML document" {
     It "opens AppX removal from Tweaks and provides a return path" {
         $navPanel = $script:xaml.SelectSingleNode('//*[local-name()="StackPanel"][@Name="NavDockPanel"]')
         $tweaksTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab2"]')
-        $appxTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab6"]')
+        $appxTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab5"]')
         $openButton = $tweaksTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFAppxRemoval"]')
         $buttonNames = @($openButton.ParentNode.SelectNodes('./*[local-name()="Button"]') | ForEach-Object { $_.GetAttribute("Name") })
         $getInstalledIndex = [array]::IndexOf($buttonNames, "WPFGetInstalledTweaks")
@@ -276,13 +229,13 @@ Describe "XAML document" {
         $buttonSource = Get-Content -Path $script:buttonScriptPath -Raw
         $tabSource = Get-Content -Path (Join-Path $script:functionRoot "public\Invoke-WPFTab.ps1") -Raw
 
-        $navPanel.SelectSingleNode('./*[local-name()="ToggleButton"][@Name="WPFTab6BT"]') | Should -BeNullOrEmpty
+        $navPanel.SelectSingleNode('./*[local-name()="ToggleButton"][@Name="WPFTab5BT"]') | Should -BeNullOrEmpty
         $openButton.GetAttribute("Content").Trim() | Should -Be "AppX Removal"
         $openAppxIndex | Should -Be ($getInstalledIndex + 1)
         $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFBackToTweaks"]') | Should -Not -BeNullOrEmpty
         $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFInstallSelectedAppx"]') | Should -Not -BeNullOrEmpty
         $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFRemoveSelectedAppx"]') | Should -Not -BeNullOrEmpty
-        $buttonSource | Should -Match '"WPFAppxRemoval"\s*\{Invoke-WPFTab "WPFTab6BT"\}'
+        $buttonSource | Should -Match '"WPFAppxRemoval"\s*\{Invoke-WPFTab "WPFTab5BT"\}'
         $buttonSource | Should -Match '"WPFBackToTweaks"\s*\{Invoke-WPFTab "WPFTab2BT"\}'
         $buttonSource | Should -Match '"WPFInstallSelectedAppx"\s*\{Invoke-WPFAppxInstall\}'
         $tabSource | Should -Match '\$sync\.\$tabNav\.Items\[\$tabNumber\]\.IsSelected = \$true'
@@ -293,8 +246,6 @@ Describe "XAML document" {
         $minimizeButton = $script:xaml.SelectSingleNode('//*[local-name()="Button"][@Name="WPFMinimizeButton"]')
         $actionPanel = $minimizeButton.ParentNode
         $topBarButtonNames = @(
-            "ThemeButton",
-            "FontScalingButton",
             "SettingsButton",
             "WPFMinimizeButton",
             "WPFMaximizeButton",
@@ -351,7 +302,7 @@ Describe "XAML document" {
         $comboToggleStyle | Should -Not -BeNullOrEmpty
         $comboToggle.GetAttribute("Style") | Should -Be "{StaticResource ComboBoxToggleButtonStyle}"
         $comboItemStyle | Should -Not -BeNullOrEmpty
-        $navButtons.Count | Should -Be 5
+        $navButtons.Count | Should -Be 4
         foreach ($navButton in $navButtons) {
             $navButton.GetAttribute("Style") | Should -Be "{StaticResource TabToggleButton}"
         }
@@ -460,16 +411,6 @@ Describe "XAML and sync wiring" {
             "ToggleStatusCache",
             "InstallAppRenderQueue",
             "InstallAppEntriesRendered",
-            "FontScaleFactor",
-            "Win11ISOImageInfo",
-            "Win11ISODriveLetter",
-            "Win11ISOWimPath",
-            "Win11ISOImagePath",
-            "Win11ISOModifying",
-            "Win11ISOProcessRunning",
-            "Win11ISOWorkDir",
-            "Win11ISOContentsDir",
-            "Win11ISOUSBDisks",
             "AppCategoryChips",
             "SelectedAppCategories",
             "AppCategoryAutoExpanded"

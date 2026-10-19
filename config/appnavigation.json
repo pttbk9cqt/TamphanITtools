@@ -38,39 +38,25 @@
         "Order": "2",
         "Description": "Use Chocolatey for package management"
     },
-    "WPFCollapseAllCategories": {
-        "Content": "Collapse All Categories",
-        "Category": "__Selection",
-        "Type": "Button",
-        "Order": "1",
-        "Description": "Collapse all application categories"
-    },
-    "WPFExpandAllCategories": {
-        "Content": "Expand All Categories",
-        "Category": "__Selection",
-        "Type": "Button",
-        "Order": "2",
-        "Description": "Expand all application categories"
-    },
     "WPFClearInstallSelection": {
         "Content": "Clear Selection",
         "Category": "__Selection",
         "Type": "Button",
-        "Order": "3",
+        "Order": "1",
         "Description": "Clear the selection of applications"
     },
     "WPFGetInstalled": {
         "Content": "Show Installed Apps",
         "Category": "__Selection",
         "Type": "Button",
-        "Order": "4",
+        "Order": "2",
         "Description": "Show installed applications"
     },
     "WPFselectedAppsButton": {
         "Content": "Selected Apps: 0",
         "Category": "__Selection",
         "Type": "Button",
-        "Order": "5",
+        "Order": "3",
         "Description": "Show the selected applications"
     },
     "WPFInstallFOSSInfo": {

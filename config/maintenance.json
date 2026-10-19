@@ -1,0 +1,51 @@
+{
+  "WPFToggleMaintenanceTasks": {
+    "Content": "Shutdown and cleanup tasks",
+    "Description": "On: create and verify IT-SHUTDOWN at 21:30 and IT-CLEAN at 12:30. Off: stop any running instance and delete both tasks. Installed files are retained.",
+    "Category": "IT-MAINTENANCE",
+    "Panel": "1",
+    "Type": "MaintenanceToggle",
+    "Order": 1,
+    "Status": "Tasks",
+    "ActionOn": "InstallTasks",
+    "ActionOff": "RemoveTasks"
+  },
+  "WPFMaintenanceExportInventory": {
+    "Content": "Export software and DxDiag now",
+    "Description": "Run the original GET-INFOMATION code now and verify C:\\IT-MAINTENANCE\\<computer>.csv and <computer>.txt. No account setup or restart is required.",
+    "Category": "IT-MAINTENANCE",
+    "Panel": "1",
+    "Type": "Button",
+    "Order": 3,
+    "Action": "ExportInventory"
+  },
+  "WPFToggleMaintenanceMonitor": {
+    "Content": "C:/D: disk monitoring",
+    "Description": "On: install and verify IT-MAINTENANCE at 09:00 and 14:00 Monday-Friday. Off: stop any running instance and delete the task. Installed scripts and volume configuration are retained.",
+    "Category": "IT-MAINTENANCE",
+    "Panel": "1",
+    "Type": "MaintenanceToggle",
+    "Order": 2,
+    "Status": "Monitor",
+    "ActionOn": "InstallMonitor",
+    "ActionOff": "RemoveMonitor"
+  },
+  "WPFToggleWindowsUpdate": {
+    "Content": "Windows Update",
+    "Description": "On: restore Windows Update defaults. Off: disable Windows Update. Restart Windows after changing this setting.",
+    "Category": "IT-MAINTENANCE",
+    "Panel": "1",
+    "Type": "MaintenanceToggle",
+    "Order": 4,
+    "Status": "WindowsUpdate"
+  },
+  "WPFMaintenanceTaskScheduler": {
+    "Content": "View Task Scheduler",
+    "Description": "Open Windows Task Scheduler to inspect IT-SHUTDOWN, IT-CLEAN, IT-MAINTENANCE, and Windows Update tasks.",
+    "Category": "IT-MAINTENANCE",
+    "Panel": "1",
+    "Type": "Button",
+    "Order": 5,
+    "Action": "Tasks"
+  }
+}

@@ -71,6 +71,23 @@ Describe "Get-WinUtilSelectedPackages" {
         @($result["Winget"]).Count | Should -Be 0
     }
 
+    It "keeps Facebook and TikTok in the PWA queue with <Preference> preferred" -TestCases @(
+        @{ Preference = "Winget" }
+        @{ Preference = "Choco" }
+    ) {
+        param([string]$Preference)
+
+        $applications = Get-Content (Join-Path $script:repoRoot "config/applications.json") -Raw | ConvertFrom-Json
+        $packages = @($applications.facebook, $applications.tiktok)
+
+        $result = Get-WinUtilSelectedPackages -PackageList $packages -Preference $Preference
+
+        @($result["PWA"]).Count | Should -Be 2
+        @($result["PWA"] | ForEach-Object { $_.pwa }) | Should -Be @($packages | ForEach-Object { $_.pwa })
+        @($result["Winget"]).Count | Should -Be 0
+        @($result["Choco"]).Count | Should -Be 0
+    }
+
     It "returns empty package lists for an empty selection" {
         $result = Get-WinUtilSelectedPackages -PackageList @() -Preference "Winget"
 

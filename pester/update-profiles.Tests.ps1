@@ -6,7 +6,8 @@ BeforeAll {
     $script:repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
     . (Join-Path $script:repoRoot "functions\public\Invoke-WPFUpdatesdisable.ps1")
     . (Join-Path $script:repoRoot "functions\public\Invoke-WPFUpdatesdefault.ps1")
-    . (Join-Path $script:repoRoot "functions\public\Invoke-WPFUpdatessecurity.ps1")
+    . (Join-Path $script:repoRoot "functions\public\Invoke-WPFWindowsUpdate.ps1")
+    . (Join-Path $script:repoRoot "functions\private\Get-WinUtilWindowsUpdateStatus.ps1")
 
     function Write-WinUtilLog {
         param($Message, $Level, $Component)
@@ -14,6 +15,9 @@ BeforeAll {
     function Show-WinUtilMessage {
         param($Message, $Title, $Button, $Icon)
     }
+    function Invoke-WPFRunspace { param($ArgumentList,$ScriptBlock) }
+    function Invoke-WPFUIThread { param($ScriptBlock) & $ScriptBlock }
+    function Set-WinUtilTweaksProgressIndicator { param($Visible,$Label,$Percent) }
     function Get-ScheduledTask {
         param($TaskPath, $ErrorAction)
     }
@@ -48,6 +52,156 @@ BeforeAll {
         '\Microsoft\Windows\WindowsUpdate\*',
         '\Microsoft\WindowsUpdate\*'
     )
+}
+
+Describe "Get-WinUtilWindowsUpdateStatus" {
+    BeforeEach {
+        Mock Get-ItemProperty { $null }
+        Mock Get-Service {
+            @("BITS", "wuauserv", "UsoSvc") | ForEach-Object {
+                [pscustomobject]@{ Name = $_; StartType = "Manual"; Status = "Stopped" }
+            }
+        }
+    }
+
+    It "reports enabled when services are available even if not currently running" {
+        Get-WinUtilWindowsUpdateStatus | Should -BeTrue
+    }
+
+    It "reports disabled when automatic updates are blocked by policy" {
+        Mock Get-ItemProperty { [pscustomobject]@{ NoAutoUpdate = 1 } }
+        Get-WinUtilWindowsUpdateStatus | Should -BeFalse
+    }
+
+    It "reports disabled when <Service> is disabled" -TestCases @(
+        @{ Service = "BITS" }
+        @{ Service = "wuauserv" }
+        @{ Service = "UsoSvc" }
+    ) {
+        param([string]$Service)
+        Mock Get-Service { [pscustomobject]@{ Name = $Service; StartType = "Disabled" } }
+        Get-WinUtilWindowsUpdateStatus | Should -BeFalse
+    }
+
+    It "propagates unavailable service state instead of reporting enabled" {
+        Mock Get-Service { throw "Service query failed" }
+        { Get-WinUtilWindowsUpdateStatus } | Should -Throw "Service query failed"
+    }
+}
+
+Describe "Invoke-WPFWindowsUpdate" {
+    BeforeEach {
+        $script:updateEnabled = $true
+        $script:sync = [hashtable]::Synchronized(@{
+            ProcessRunning = $false
+            WPFToggleWindowsUpdate = [pscustomobject]@{
+                IsChecked = $true
+                IsEnabled = $true
+                Tag = $true
+                ToolTip = "Windows Update"
+            }
+        })
+        Mock Write-WinUtilLog { }
+        Mock Show-WinUtilMessage { "Yes" }
+        Mock Invoke-WPFRunspace { & $ScriptBlock $ArgumentList }
+        Mock Invoke-WPFUIThread { & $ScriptBlock }
+        Mock Set-WinUtilTweaksProgressIndicator { }
+        Mock Get-WinUtilWindowsUpdateStatus { $script:updateEnabled }
+        Mock Invoke-WPFUpdatesdefault { $script:updateEnabled = $true }
+        Mock Invoke-WPFUpdatesdisable { $script:updateEnabled = $false }
+    }
+
+    AfterEach {
+        Remove-Variable -Name sync -Scope Script -ErrorAction SilentlyContinue
+    }
+
+    It "refreshes the switch without applying Windows Update changes" {
+        $script:updateEnabled = $false
+        Invoke-WPFWindowsUpdate -Refresh
+
+        $sync.WPFToggleWindowsUpdate.IsChecked | Should -BeFalse
+        $sync.WPFToggleWindowsUpdate.Tag | Should -BeFalse
+        Should -Not -Invoke Invoke-WPFUpdatesdefault
+        Should -Not -Invoke Invoke-WPFUpdatesdisable
+        Should -Not -Invoke Invoke-WPFRunspace
+    }
+
+    It "restores defaults when switched on" {
+        $sync.WPFToggleWindowsUpdate.Tag = $false
+        Invoke-WPFWindowsUpdate
+
+        Should -Invoke Invoke-WPFUpdatesdefault -Times 1 -Exactly
+        Should -Not -Invoke Invoke-WPFUpdatesdisable
+        $sync.WPFToggleWindowsUpdate.IsChecked | Should -BeTrue
+        $sync.ProcessRunning | Should -BeFalse
+    }
+
+    It "disables updates when switched off" {
+        $sync.WPFToggleWindowsUpdate.IsChecked = $false
+        Invoke-WPFWindowsUpdate
+
+        Should -Invoke Invoke-WPFUpdatesdisable -Times 1 -Exactly
+        Should -Not -Invoke Invoke-WPFUpdatesdefault
+        $sync.WPFToggleWindowsUpdate.IsChecked | Should -BeFalse
+    }
+
+    It "returns to the actual enabled state when disabling is cancelled" {
+        Mock Show-WinUtilMessage { "No" }
+        $sync.WPFToggleWindowsUpdate.IsChecked = $false
+        Invoke-WPFWindowsUpdate
+
+        $sync.WPFToggleWindowsUpdate.IsChecked | Should -BeTrue
+        $sync.WPFToggleWindowsUpdate.Tag | Should -BeTrue
+        Should -Not -Invoke Invoke-WPFUpdatesdisable
+        Should -Not -Invoke Invoke-WPFUpdatesdefault
+        Should -Not -Invoke Invoke-WPFRunspace
+    }
+
+    It "preserves the switch and running flag when another operation is active" {
+        $sync.ProcessRunning = $true
+        $sync.WPFToggleWindowsUpdate.IsChecked = $false
+        Invoke-WPFWindowsUpdate
+
+        $sync.WPFToggleWindowsUpdate.IsChecked | Should -BeTrue
+        $sync.ProcessRunning | Should -BeTrue
+        Should -Not -Invoke Invoke-WPFUpdatesdefault
+        Should -Not -Invoke Invoke-WPFUpdatesdisable
+    }
+
+    It "reports a failed operation and restores actual state without retrying it" {
+        Mock Invoke-WPFUpdatesdisable { throw "Disable failed" }
+        $sync.WPFToggleWindowsUpdate.IsChecked = $false
+        Invoke-WPFWindowsUpdate
+
+        $sync.WPFToggleWindowsUpdate.IsChecked | Should -BeTrue
+        $sync.ProcessRunning | Should -BeFalse
+        Should -Invoke Show-WinUtilMessage -Times 1 -Exactly -ParameterFilter { $Icon -eq "Error" }
+        Should -Invoke Invoke-WPFUpdatesdisable -Times 1 -Exactly
+        Should -Not -Invoke Invoke-WPFUpdatesdefault
+    }
+
+    It "queues the system work instead of running it on the WPF thread" {
+        Mock Invoke-WPFRunspace { }
+        $sync.WPFToggleWindowsUpdate.IsChecked = $false
+
+        Invoke-WPFWindowsUpdate
+
+        Should -Invoke Invoke-WPFRunspace -Times 1 -Exactly
+        Should -Not -Invoke Invoke-WPFUpdatesdisable
+        Should -Not -Invoke Invoke-WPFUpdatesdefault
+        $sync.ProcessRunning | Should -BeTrue
+        $sync.WPFToggleWindowsUpdate.IsEnabled | Should -BeFalse
+    }
+
+    It "disables the control when its state cannot be read" {
+        Mock Get-WinUtilWindowsUpdateStatus { throw "Service query failed" }
+        Invoke-WPFWindowsUpdate -Refresh
+
+        $sync.WPFToggleWindowsUpdate.IsEnabled | Should -BeFalse
+        $sync.WPFToggleWindowsUpdate.ToolTip | Should -Match "Unable to read"
+        Should -Not -Invoke Invoke-WPFUpdatesdefault
+        Should -Not -Invoke Invoke-WPFUpdatesdisable
+    }
 }
 
 Describe "Invoke-WPFUpdatesdisable" {
@@ -243,152 +397,5 @@ Describe "Invoke-WPFUpdatesdefault" {
         }
         Should -Invoke -CommandName Enable-ScheduledTask -Times $script:updateTaskPaths.Count -Exactly
         Should -Not -Invoke secedit
-    }
-}
-
-Describe "Invoke-WPFUpdatessecurity" {
-    BeforeEach {
-        Mock Write-Host { }
-        Mock Write-WinUtilLog { }
-        Mock New-Item { }
-        Mock Set-ItemProperty { }
-        Mock Remove-ItemProperty { }
-        Mock Set-Service { }
-        Mock Start-Service { }
-        Mock Get-ScheduledTask {
-            [pscustomobject]@{
-                TaskPath = $TaskPath
-            }
-        }
-        Mock Enable-ScheduledTask { }
-    }
-
-    It "restores update availability before applying recommended settings" {
-        Invoke-WPFUpdatessecurity
-
-        Should -Invoke -CommandName Remove-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -and
-                $Name -eq "NoAutoUpdate"
-        }
-        Should -Invoke -CommandName Remove-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -and
-                $Name -eq "DODownloadMode"
-        }
-        Should -Invoke -CommandName Set-Service -Times 1 -Exactly -ParameterFilter {
-            $Name -eq "BITS" -and $StartupType -eq "Manual"
-        }
-        Should -Invoke -CommandName Set-Service -Times 1 -Exactly -ParameterFilter {
-            $Name -eq "wuauserv" -and $StartupType -eq "Manual"
-        }
-        Should -Invoke -CommandName Set-Service -Times 1 -Exactly -ParameterFilter {
-            $Name -eq "UsoSvc" -and $StartupType -eq "Automatic"
-        }
-        Should -Invoke -CommandName Start-Service -Times 1 -Exactly -ParameterFilter {
-            $Name -eq "UsoSvc"
-        }
-        foreach ($expectedTaskPath in $script:updateTaskPaths) {
-            $expected = $expectedTaskPath
-            Should -Invoke -CommandName Get-ScheduledTask -Times 1 -Exactly -ParameterFilter {
-                $TaskPath -eq $expected
-            }
-        }
-        Should -Invoke -CommandName Enable-ScheduledTask -Times $script:updateTaskPaths.Count -Exactly
-    }
-
-    It "disables driver metadata and Windows Update driver search" {
-        Invoke-WPFUpdatessecurity
-
-        Should -Invoke -CommandName New-Item -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata" -and $Force -eq $true
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata" -and
-                $Name -eq "PreventDeviceMetadataFromNetwork" -and
-                $Type -eq "DWord" -and
-                $Value -eq 1
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DriverSearching" -and
-                $Name -eq "DontPromptForWindowsUpdate" -and
-                $Type -eq "DWord" -and
-                $Value -eq 1
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DriverSearching" -and
-                $Name -eq "DontSearchWindowsUpdate" -and
-                $Type -eq "DWord" -and
-                $Value -eq 1
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DriverSearching" -and
-                $Name -eq "DriverUpdateWizardWuSearchEnabled" -and
-                $Type -eq "DWord" -and
-                $Value -eq 0
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -and
-                $Name -eq "ExcludeWUDriversInQualityUpdate" -and
-                $Type -eq "DWord" -and
-                $Value -eq 1
-        }
-    }
-
-    It "sets recommended update deferral and auto-reboot policy values" {
-        Invoke-WPFUpdatessecurity
-
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -and
-                $Name -eq "DeferFeatureUpdates" -and
-                $Type -eq "DWord" -and
-                $Value -eq 1
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -and
-                $Name -eq "DeferFeatureUpdatesPeriodInDays" -and
-                $Type -eq "DWord" -and
-                $Value -eq 365
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -and
-                $Name -eq "DeferQualityUpdates" -and
-                $Type -eq "DWord" -and
-                $Value -eq 1
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -and
-                $Name -eq "DeferQualityUpdatesPeriodInDays" -and
-                $Type -eq "DWord" -and
-                $Value -eq 4
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -and
-                $Name -eq "AUOptions" -and
-                $Type -eq "DWord" -and
-                $Value -eq 4
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -and
-                $Name -eq "NoAutoRebootWithLoggedOnUsers" -and
-                $Type -eq "DWord" -and
-                $Value -eq 1
-        }
-        Should -Invoke -CommandName Set-ItemProperty -Times 1 -Exactly -ParameterFilter {
-            $Path -eq "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -and
-                $Name -eq "AUPowerManagement" -and
-                $Type -eq "DWord" -and
-                $Value -eq 0
-        }
-    }
-
-    It "removes legacy WinUtil deferral values from the unsupported UX settings path" {
-        Invoke-WPFUpdatessecurity
-
-        foreach ($expectedValueName in @("BranchReadinessLevel", "DeferFeatureUpdatesPeriodInDays", "DeferQualityUpdatesPeriodInDays")) {
-            $expected = $expectedValueName
-            Should -Invoke Remove-ItemProperty -Times 1 -Exactly -ParameterFilter {
-                $Path -eq "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -and
-                    $Name -eq $expected
-            }
-        }
     }
 }

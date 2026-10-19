@@ -1,0 +1,392 @@
+# =====================================================================
+# FINAL - THU THẬP THÔNG TIN MÁY TÍNH
+# =====================================================================
+#
+# SCRIPT TỰ ĐỘNG XUẤT 02 FILE THEO HOST NAME:
+#
+# 1. HOSTNAME.csv
+#    - Hệ điều hành Windows
+#    - Phần mềm đã cài đặt
+#    - Phiên bản
+#    - Nhà phát hành
+#    - Ngày cài đặt
+#    - Trạng thái License
+#
+# 2. HOSTNAME.txt
+#    - Thông tin máy tính từ DxDiag
+#
+# Ví dụ:
+# Host Name : PC-CNTT-05
+#
+# File xuất:
+# C:\PC-CNTT-05.csv
+# C:\PC-CNTT-05.txt
+#
+# CỘT FILE CSV:
+# PhanMem | PhienBan | NhaPhatHanh | NgayCaiDat | LicenseStatus
+#
+# THỨ TỰ TRONG FILE CSV:
+# 1. Windows
+# 2. Microsoft Office
+# 3. Các phần mềm còn lại theo A-Z
+#
+# LƯU Ý:
+# - LicenseStatus lấy từ SoftwareLicensingProduct.
+# - Chủ yếu áp dụng cho Windows và Microsoft Office.
+# - Các phần mềm khác có thể không có LicenseStatus.
+#
+# =====================================================================
+
+
+# =====================================================================
+# 0. HÀM CHUYỂN LICENSESTATUS THÀNH TRẠNG THÁI DỄ ĐỌC
+# =====================================================================
+
+function Get-LicenseStatusText {
+    param($Status)
+
+    switch ($Status) {
+        0 { "Unlicensed" }
+        1 { "Licensed" }
+        2 { "OOB Grace" }
+        3 { "OOT Grace" }
+        4 { "Non-Genuine Grace" }
+        5 { "Notification" }
+        6 { "Extended Grace" }
+        default { "" }
+    }
+}
+
+
+# =====================================================================
+# 1. LẤY HOST NAME
+# =====================================================================
+
+$HostName = $env:COMPUTERNAME
+
+
+# =====================================================================
+# 2. XÁC ĐỊNH TÊN 02 FILE XUẤT
+# =====================================================================
+
+$SoftwareFile = "C:\IT-MAINTENANCE\$HostName.csv"
+$DxDiagFile   = "C:\IT-MAINTENANCE\$HostName.txt"
+
+
+# =====================================================================
+# 3. LẤY DANH SÁCH PHẦN MỀM ĐÃ CÀI ĐẶT TỪ REGISTRY
+# =====================================================================
+
+$Paths = @(
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+)
+
+$InstalledSoftware = Get-ItemProperty $Paths -ErrorAction SilentlyContinue |
+Where-Object {
+    $_.DisplayName
+} |
+Select-Object `
+    @{Name="PhanMem"; Expression={$_.DisplayName}},
+    @{Name="PhienBan"; Expression={$_.DisplayVersion}},
+    @{Name="NhaPhatHanh"; Expression={$_.Publisher}},
+    @{Name="NgayCaiDat"; Expression={$_.InstallDate}} |
+Sort-Object PhanMem, PhienBan -Unique
+
+
+# =====================================================================
+# 4. LẤY THÔNG TIN LICENSE WINDOWS / MICROSOFT OFFICE
+# =====================================================================
+
+$Licenses = Get-CimInstance `
+    -ClassName SoftwareLicensingProduct `
+    -ErrorAction SilentlyContinue |
+Where-Object {
+    $_.PartialProductKey
+}
+
+
+# =====================================================================
+# 5. LẤY THÔNG TIN WINDOWS
+# =====================================================================
+
+$WindowsInfo = Get-CimInstance `
+    -ClassName Win32_OperatingSystem `
+    -ErrorAction SilentlyContinue
+
+
+# =====================================================================
+# 6. XÁC ĐỊNH LICENSE WINDOWS
+# =====================================================================
+
+$WindowsLicenses = $Licenses |
+Where-Object {
+    $_.Name -like "Windows*"
+}
+
+$WindowsLicense = $WindowsLicenses |
+Where-Object {
+    $_.LicenseStatus -eq 1
+} |
+Select-Object -First 1
+
+if (-not $WindowsLicense) {
+
+    $WindowsLicense = $WindowsLicenses |
+    Select-Object -First 1
+}
+
+
+# =====================================================================
+# 7. TẠO DÒNG THÔNG TIN WINDOWS
+# =====================================================================
+
+$Windows = $null
+
+if ($WindowsInfo) {
+
+    $WindowsLicenseStatus = $null
+
+    if ($WindowsLicense) {
+        $WindowsLicenseStatus = $WindowsLicense.LicenseStatus
+    }
+
+    $Windows = [PSCustomObject]@{
+        PhanMem       = $WindowsInfo.Caption
+        PhienBan      = $WindowsInfo.Version
+        NhaPhatHanh   = $WindowsInfo.Manufacturer
+        NgayCaiDat    = ""
+        LicenseStatus = Get-LicenseStatusText $WindowsLicenseStatus
+    }
+}
+
+
+# =====================================================================
+# 8. LẤY LICENSE MICROSOFT OFFICE
+# =====================================================================
+
+$OfficeLicenses = $Licenses |
+Where-Object {
+    $_.Name -like "*Office*"
+}
+
+
+# =====================================================================
+# 9. XÁC ĐỊNH LICENSESTATUS MICROSOFT OFFICE
+# =====================================================================
+
+$OfficeLicenseStatus = $null
+
+if ($OfficeLicenses) {
+
+    $ActivatedOffice = $OfficeLicenses |
+    Where-Object {
+        $_.LicenseStatus -eq 1
+    } |
+    Select-Object -First 1
+
+    if ($ActivatedOffice) {
+
+        $OfficeLicenseStatus = $ActivatedOffice.LicenseStatus
+
+    }
+    else {
+
+        $FirstOfficeLicense = $OfficeLicenses |
+        Select-Object -First 1
+
+        if ($FirstOfficeLicense) {
+            $OfficeLicenseStatus = $FirstOfficeLicense.LicenseStatus
+        }
+    }
+}
+
+
+# =====================================================================
+# 10. GHÉP LICENSESTATUS VÀO DANH SÁCH PHẦN MỀM
+# =====================================================================
+
+$Software = foreach ($App in $InstalledSoftware) {
+
+    $CurrentLicenseStatus = $null
+
+
+    # -----------------------------------------------------------------
+    # XÁC ĐỊNH MICROSOFT OFFICE
+    # -----------------------------------------------------------------
+
+    $IsMicrosoftOffice = (
+        $App.PhanMem -match "(?i)Microsoft.*Office|Office.*Microsoft" -or
+        (
+            $App.PhanMem -match "(?i)\bOffice\b" -and
+            $App.NhaPhatHanh -match "(?i)Microsoft"
+        )
+    )
+
+
+    # -----------------------------------------------------------------
+    # GHÉP LICENSESTATUS OFFICE
+    # -----------------------------------------------------------------
+
+    if ($IsMicrosoftOffice -and $OfficeLicenses) {
+        $CurrentLicenseStatus = $OfficeLicenseStatus
+    }
+
+
+    # -----------------------------------------------------------------
+    # TẠO KẾT QUẢ
+    # -----------------------------------------------------------------
+
+    [PSCustomObject]@{
+        PhanMem       = $App.PhanMem
+        PhienBan      = $App.PhienBan
+        NhaPhatHanh   = $App.NhaPhatHanh
+        NgayCaiDat    = $App.NgayCaiDat
+        LicenseStatus = Get-LicenseStatusText $CurrentLicenseStatus
+    }
+}
+
+
+# =====================================================================
+# 11. LOẠI BỎ DÒNG TRÙNG TRONG DANH SÁCH PHẦN MỀM
+# =====================================================================
+
+$Software = $Software |
+Sort-Object PhanMem, PhienBan -Unique
+
+
+# =====================================================================
+# 12. TÁCH MICROSOFT OFFICE
+# =====================================================================
+
+$OfficeResult = $Software |
+Where-Object {
+
+    $_.PhanMem -match "(?i)Microsoft.*Office|Office.*Microsoft" -or
+    (
+        $_.PhanMem -match "(?i)\bOffice\b" -and
+        $_.NhaPhatHanh -match "(?i)Microsoft"
+    )
+
+} |
+Sort-Object PhanMem
+
+
+# =====================================================================
+# 13. LẤY CÁC PHẦN MỀM CÒN LẠI
+# =====================================================================
+
+$SoftwareResult = $Software |
+Where-Object {
+
+    -not (
+        $_.PhanMem -match "(?i)Microsoft.*Office|Office.*Microsoft" -or
+        (
+            $_.PhanMem -match "(?i)\bOffice\b" -and
+            $_.NhaPhatHanh -match "(?i)Microsoft"
+        )
+    )
+
+} |
+Sort-Object PhanMem
+
+
+# =====================================================================
+# 14. GHÉP KẾT QUẢ
+#
+# THỨ TỰ:
+# 1. WINDOWS
+# 2. MICROSOFT OFFICE
+# 3. PHẦN MỀM CÒN LẠI A-Z
+# =====================================================================
+
+$FinalResult = @()
+
+if ($Windows) {
+    $FinalResult += $Windows
+}
+
+$FinalResult += $OfficeResult
+$FinalResult += $SoftwareResult
+
+
+# =====================================================================
+# 15. CHỌN THỨ TỰ CỘT
+# =====================================================================
+
+$FinalResult = $FinalResult |
+Select-Object `
+    PhanMem,
+    PhienBan,
+    NhaPhatHanh,
+    NgayCaiDat,
+    LicenseStatus
+
+
+# =====================================================================
+# 16. XUẤT DANH SÁCH PHẦN MỀM RA FILE CSV
+#
+# Ví dụ:
+# C:\PC-CNTT-05.csv
+# =====================================================================
+
+$FinalResult |
+Export-Csv `
+    -Path $SoftwareFile `
+    -NoTypeInformation `
+    -Encoding UTF8
+
+
+# =====================================================================
+# 17. XUẤT THÔNG TIN MÁY TÍNH BẰNG DXDIAG
+#
+# Ví dụ:
+# C:\PC-CNTT-05.txt
+# =====================================================================
+
+Start-Process `
+    -FilePath "dxdiag.exe" `
+    -ArgumentList "/t `"$DxDiagFile`"" `
+    -Wait `
+    -NoNewWindow
+
+
+# =====================================================================
+# 18. KIỂM TRA FILE ĐÃ ĐƯỢC TẠO
+# =====================================================================
+
+$SoftwareFileOK = Test-Path $SoftwareFile
+$DxDiagFileOK   = Test-Path $DxDiagFile
+
+
+# =====================================================================
+# 19. HIỂN THỊ KẾT QUẢ
+# =====================================================================
+
+Write-Host ""
+Write-Host "============================================================"
+Write-Host "        HOAN TAT THU THAP THONG TIN MAY TINH"
+Write-Host "============================================================"
+Write-Host ""
+
+Write-Host "Host Name: $HostName"
+Write-Host ""
+
+Write-Host "FILE PHAN MEM:"
+if ($SoftwareFileOK) {
+    Write-Host "[OK] $SoftwareFile"
+}
+
+Write-Host ""
+
+Write-Host "FILE DXDIAG:"
+if ($DxDiagFileOK) {
+    Write-Host "[OK] $DxDiagFile"
+}
+
+Write-Host ""
+Write-Host "============================================================"
+Write-Host "                         HOAN TAT"
+Write-Host "============================================================"
+Write-Host ""

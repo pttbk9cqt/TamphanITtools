@@ -94,10 +94,9 @@ This scoping applies to compiled-script behavior only. Repository metadata — `
 
 ## 6. Runtime And Safety Rules
 
-- WinUtil performs system-level Windows changes; treat registry, services, AppX removal, package manager, Windows Update, ISO, and unattended setup changes as high-risk (see SPEC.md's Safety Requirements).
+- WinUtil performs system-level Windows changes; treat registry, services, AppX removal, package manager, and Windows Update changes as high-risk (see SPEC.md's Safety Requirements).
 - Prefer existing helper functions for WinGet, Chocolatey, registry, services, progress, and UI updates.
 - Keep tweaks reversible where the schema supports it by including original values or original states.
-- Never modify a user's original ISO in-place; follow existing copy/mount/export patterns.
 - Avoid storing credentials, secrets, or machine-specific paths in repo files.
 - Preserve logging and user feedback patterns for long-running or destructive operations.
 
@@ -176,7 +175,9 @@ When the user corrects an agent approach, add or tighten one concrete rule here 
 - When the active log file is owned by `Start-Transcript`, do not call `Add-Content` against that file; write to host output so the transcript captures the line in the same log file without recording a terminating-error diagnostic.
 - Keep UI helpers such as `Invoke-WPFUIThread` and `Set-WinUtilTweaksProgressIndicator` safe to call without a window; the `-Preset` and `-Config` paths run the workflows before the form is created and before PresentationCore is loaded.
 - Log install/uninstall package names and package-manager IDs before queuing background runspace work; do not rely on runspace host output for the package identity.
-- For Win11 Creator, start each new ISO modification in a fresh `WinUtil_Win11ISO_*` temp directory; existing-work detection is only for resuming/exporting already modified media.
-- For Win11 Creator driver injection, keep offline WIM servicing to one mount, one `/Add-Driver`, and one commit; do not export editions or run unrelated WIM cleanup, and reject damaged metadata before ISO export.
 - For Script Analyzer cleanup, fix actionable source warnings first and do not globally suppress accepted convention warnings such as plural names, `ShouldProcess` on UI helpers, `$global:sync`, or compile-time cross-file false positives.
 - For DNS DHCP reset, keep the cmdlet reset and explicitly set IPv4 and IPv6 DNS source to DHCP.
+- Treat `installType: "pwa"` entries with a valid web URL as supported applications; do not require WinGet/Chocolatey IDs or change Facebook/TikTok PWA configuration to satisfy package-only tests.
+- Keep Windows Update in Maintenance as one Tweaks-style switch: on restores defaults, off disables updates; initializing or refreshing its displayed state must never apply system changes.
+- Keep Maintenance as one compact panel: task-backed workflows and Windows Update use stateful switches, while immediate inventory remains a button. Turning a task switch off removes its Scheduled Task definitions but retains installed files and reports. Preserve the original CLEANER and automatic D: hiding/restoration behavior.
+- Keep Maintenance switch work off the WPF thread, keep dialogs owned by the main window, and leave the Task Scheduler viewer available while background maintenance is running.

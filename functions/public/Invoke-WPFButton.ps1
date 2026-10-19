@@ -14,8 +14,13 @@ function Invoke-WPFButton {
 
     # Use this to get the name of the button
     #[System.Windows.MessageBox]::Show("$Button","Chris Titus Tech's Windows Utility","OK","Info")
-    if (-not $sync.ProcessRunning -and -not $sync.Win11ISOProcessRunning) {
+    if (-not $sync.ProcessRunning) {
         Set-WinUtilTweaksProgressIndicator -Visible $false
+    }
+
+    if ($sync.configs.maintenance.$Button.Type -eq 'Button') {
+        Invoke-WPFMaintenance -Action $sync.configs.maintenance.$Button.Action
+        return
     }
 
     # Check if button is defined in feature config with function or InvokeScript
@@ -48,8 +53,6 @@ function Invoke-WPFButton {
         "WPFInstall" {Invoke-WPFInstall}
         "WPFUninstall" {Invoke-WPFUnInstall}
         "WPFInstallUpgrade" {Invoke-WPFInstallUpgrade}
-        "WPFCollapseAllCategories" {Invoke-WPFToggleAllCategories -Action "Collapse"}
-        "WPFExpandAllCategories" {Invoke-WPFToggleAllCategories -Action "Expand"}
         "WPFStandard" {Invoke-WPFPresets "Standard" -checkboxfilterpattern "WPFTweak*"}
         "WPFMinimal" {Invoke-WPFPresets "Minimal" -checkboxfilterpattern "WPFTweak*"}
         "WPFAdvanced" {Invoke-WPFPresets "Advanced" -checkboxfilterpattern "WPFTweak*"}
@@ -60,12 +63,9 @@ function Invoke-WPFButton {
         "WPFAddUltPerf" {Invoke-WPFUltimatePerformance -Enable}
         "WPFRemoveUltPerf" {Invoke-WPFUltimatePerformance}
         "WPFundoall" {Invoke-WPFundoall}
-        "WPFUpdatesdefault" {Invoke-WPFUpdatesdefault}
-        "WPFUpdatesdisable" {Invoke-WPFUpdatesdisable}
-        "WPFUpdatessecurity" {Invoke-WPFUpdatessecurity}
         "WPFGetInstalled" {Invoke-WPFGetInstalled -CheckBox "winget"}
         "WPFGetInstalledTweaks" {Invoke-WPFGetInstalled -CheckBox "tweaks"}
-        "WPFAppxRemoval" {Invoke-WPFTab "WPFTab6BT"}
+        "WPFAppxRemoval" {Invoke-WPFTab "WPFTab5BT"}
         "WPFBackToTweaks" {Invoke-WPFTab "WPFTab2BT"}
         "WPFInstallSelectedAppx" {Invoke-WPFAppxInstall}
         "WPFRemoveSelectedAppx" {Invoke-WPFAppxRemoval}

@@ -1,6 +1,6 @@
 ---
 title: Architecture & Design
-description: How WinUtil's GUI, functions, and JSON configuration files fit together, plus a deep dive into the Win11 Creator subsystem.
+description: How WinUtil's GUI, functions, and JSON configuration files fit together.
 ---
 
 ## Overview
@@ -127,150 +127,6 @@ winutil/
 - CheckBoxes for options
 - ListBoxes for selections
 
-## Win11 Creator Architecture
-
-The **Win11 Creator** is a specialized subsystem within Winutil that creates customized Windows 11 ISOs. It operates independently from the main package installation and tweak system.
-
-### Win11 Creator Components
-
-**Core Functions** (`functions/private/`):
-- `Invoke-WinUtilISO.ps1`: Main orchestrator containing all Win11 Creator functions
-  - `Invoke-WinUtilISOBrowse`: ISO file selection dialog
-  - `Invoke-WinUtilISOMountAndVerify`: Validates and mounts ISO, verifies it's official Windows 11
-  - `Invoke-WinUtilISOModify`: Launches modification in background runspace
-  - `Invoke-WinUtilISOExport`: Handles ISO and USB export
-  - `Invoke-WinUtilISOCheckExistingWork`: Recovers incomplete work sessions
-  - `Invoke-WinUtilISOCleanAndReset`: Cleans up temp directories and resets UI
-
-- `Invoke-WinUtilISOScript.ps1`: Applies modifications to mounted install.wim
-  - Removes provisioned AppX packages (40+ bloatware apps)
-  - Injects drivers (optional) from the current system
-  - Removes OneDrive setup files
-  - Applies offline registry tweaks (hardware bypass, privacy, telemetry, OOBE)
-  - Deletes telemetry scheduled task definitions
-  - Pre-stages setup scripts from autounattend.xml
-
-### Win11 Creator Data Flow
-
-```
-User selects official Windows 11 ISO
-    ↓
-Invoke-WinUtilISOBrowse → OpenFileDialog, validates file size
-    ↓
-Invoke-WinUtilISOMountAndVerify
-    ├─ Mount ISO via Mount-DiskImage
-    ├─ Verify install.wim or install.esd exists
-    ├─ Check for "Windows 11" in image metadata
-    ├─ Extract available editions (Home, Pro, Enterprise, etc.)
-    └─ Store ISO path, drive letter, WIM path, image info in $sync
-    ↓
-User optionally enables the Driver Injection checkbox
-    ↓
-Invoke-WinUtilISOModify (runs in background runspace)
-    ├─ Create work directory: ~WinUtil_Win11ISO_[timestamp]
-    ├─ Copy ISO contents to disk (~5-6 GB)
-    ├─ Mount install.wim at selected edition/index
-    ├─ Invoke-WinUtilISOScript:
-    │   ├─ Remove 40+ bloat AppX packages
-    │   ├─ Export and inject drivers (if enabled)
-    │   ├─ Remove OneDrive setup
-    │   ├─ Load offline registry hives
-    │   ├─ Apply 50+ registry tweaks (hardware bypass, privacy, telemetry, OOBE, etc.)
-    │   ├─ Delete telemetry scheduled task files
-    │   ├─ Pre-stage setup scripts from autounattend.xml to C:\Windows\Setup\Scripts\
-    │   └─ Unload registry hives
-    ├─ Dismount and save the modified install.wim (~10+ minutes, slowest step)
-    ├─ Dismount source ISO
-    └─ Report completion, enable export options
-    ↓
-Invoke-WinUtilISOExport (user chooses output)
-    ├─ Option 1: Save as ISO
-    │   ├─ Build bootable ISO via oscdimg.exe (BIOS/UEFI dual-boot)
-    │   └─ Output: Win11_Modified_[date].iso (close to the source ISO size)
-    │
-    └─ Option 2: Write to USB
-        ├─ Format USB as GPT
-        ├─ Create 512 MB EFI partition
-        ├─ Copy modified ISO contents
-        └─ Output: Bootable USB (minimum 8 GB)
-    ↓
-Invoke-WinUtilISOCleanAndReset (optional)
-    └─ Delete temp working directory (~10-15 GB)
-    └─ Reset UI to initial state
-```
-
-### Win11 Creator Validation & Safety
-
-**ISO Validation**:
-- Only accepts official Microsoft Windows 11 ISOs
-- Validates presence of install.wim or install.esd
-- Checks image metadata for "Windows 11" string
-- Rejects custom, modified, or non-Windows 11 ISOs
-
-**Work Session Recovery**:
-- Auto-detects incomplete work from previous sessions
-- Allows resuming Step 4 (export) without re-running Steps 1-3
-- Prevents redundant modifications
-
-**Modification Safety**:
-- All registry changes are documented in a script (reversible)
-- Original ISO never modified; only working copy
-- Logged to `WinUtil_Win11ISO.log` for debugging
-- DISM handles image dismount with automatic cleanup on error
-
-### Win11 Creator Registry Tweaks
-
-The `Invoke-WinUtilISOScript` function applies **50+ offline registry tweaks**:
-
-**Hardware Bypass**:
-- TPM 2.0 check bypass
-- Secure Boot requirement bypass
-- CPU compatibility bypass
-- RAM requirement bypass
-- Storage check bypass
-
-**Privacy & Telemetry**:
-- Disable advertising ID
-- Disable tailored experiences
-- Disable input personalization
-- Disable speech online privacy
-- Disable cloud content suggestions
-- Disable app suggestion subscriptions
-- Remove CEIP, Appraiser, WaaSMedic, etc.
-
-**OOBE & Setup**:
-- Enable local account setup
-- Skip Microsoft account requirement
-- Dark mode by default
-- Empty taskbar and Start Menu
-
-**Post-Setup Installations**:
-- Prevent DevHome auto-installation
-- Prevent new Outlook Mail app installation
-- Prevent Teams auto-installation
-
-**System Features**:
-- Disable BitLocker and device encryption
-- Disable Chat icon from the Taskbar
-- Disable OneDrive folder backup
-- Disable Copilot
-- Disable Windows Update during OOBE (re-enabled at first login)
-
-### Driver Injection Feature
-
-**Optional Enhancement**: When enabled, exports all drivers from the running system and injects them into both:
-- `install.wim` (main OS image)
-- `boot.wim` index 2 (Windows Setup PE environment)
-
-**Use Case**: Enables offline installation on systems with missing drivers.
-
-### Disk Space Requirements
-
-- **Temporary working directory**: ~10-15 GB
-- **Original ISO**: 4-6 GB
-- **Modified ISO**: close to the source ISO size
-- **Total needed**: ~25 GB for safe operation
-
 ## Data Flow
 
 ### Application Installation Flow
@@ -332,6 +188,16 @@ Remove from the applied tweaks log
     ↓
 Update UI
 ```
+
+## Maintenance workflows
+
+Windows Update uses one CheckBox in Maintenance with the same switch style as Tweaks. `Invoke-WPFWindowsUpdate` handles clicks: on calls `Invoke-WPFUpdatesdefault`, off calls `Invoke-WPFUpdatesdisable`. Lazy initialization calls it with `-Refresh`, which only reads policy/service state through `Get-WinUtilWindowsUpdateStatus`. Programmatic state changes never invoke either update workflow. The switch is excluded from tweak selections and returns to the actual state after cancellation or failure. There is no separate Updates tab or Recommended update profile. Tab navigation uses sequential control numbers, with Maintenance at `WPFTab4` and AppX at `WPFTab5`.
+
+The Maintenance tab renders one compact, ordered panel from `config/maintenance.json`. It contains stateful switches for the daily shutdown/cleanup tasks, C:/D: monitoring, and Windows Update, plus one immediate software/DxDiag export button. `Invoke-WPFMaintenanceToggle` reads actual Scheduled Task state when the tab opens and maps each user click to its install or removal action. `Invoke-WPFMaintenance` confirms the effect and queues `Invoke-WinUtilMaintenance` through the existing runspace pool; completion refreshes the switch from system state. Turning a maintenance switch off removes only its task definitions and retains installed files and reports.
+
+The compiler embeds `maintenance/*.ps1` as UTF-8/base64 into `$sync.configs.maintenanceScripts` and the four files in `maintenance/original/` as raw-byte/base64 payloads into `$sync.configs.maintenanceOriginalFiles`. `Install-WinUtilOriginalMaintenanceFiles` backs up replaced files and secures `C:\IT-MAINTENANCE`. The standalone compiled script has no dependency on the ComputerMaintenance checkout or a network share.
+
+Daily tasks retain the original actions, times, and current-account context; `/F` permits an explicit reinstall. `RunOriginal.ps1` runs the original inventory or monitoring installer in a separate Windows PowerShell process, replacing only the closing `Read-Host`/`Clear-Host` console interaction. The original cleaner and D: hiding/restoration behavior is preserved. Success requires task verification or fresh CSV/TXT reports with a stable DxDiag output. UI actions use the WinUtil session log, and the original monitor retains `DiskMonitor.log`. Earlier account/network setup helpers are no longer exposed by the Maintenance UI.
 
 ## Configuration File Format
 
@@ -653,7 +519,6 @@ Outputs `winutil.ps1` in the root directory.
 
 - [Contributing Guide](/contributing/) - How to contribute code
 - [User Guide](/guides/) - End-user documentation
-- [Win11 Creator Guide](/guides/win11creator/) - Building customized Windows 11 ISOs
 - [FAQ](/faq/) - Common questions
 
 ## Additional Resources

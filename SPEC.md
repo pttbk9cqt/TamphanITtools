@@ -26,8 +26,9 @@ WinUtil is a Windows PowerShell utility with a WPF interface. The repository is 
 - `functions/public/`: public/UI-facing PowerShell functions.
 - `functions/private/`: internal helper PowerShell functions.
 - `config/`: JSON configuration consumed at compile time and embedded into `$sync.configs`.
+- `maintenance/`: standalone ComputerMaintenance worker scripts embedded by the compiler for installation or export from the Maintenance tab.
+- `maintenance/original/`: the four original IT-MAINTENANCE batch/text workflow files, embedded byte-for-byte for the three Maintenance actions.
 - `xaml/inputXML.xaml`: WPF UI markup embedded into the compiled script.
-- `tools/autounattend.xml`: unattended setup XML embedded for Windows ISO workflows.
 - `pester/`: Pester tests for config and function checks.
 - `lint/PSScriptAnalyser.ps1`: PowerShell Script Analyzer settings.
 - `docs/`: Astro + Starlight documentation site, with its own `package.json` and build independent of `Compile.ps1`.
@@ -37,7 +38,7 @@ WinUtil is a Windows PowerShell utility with a WPF interface. The repository is 
 
 - Provide a single-script Windows utility that can be launched from PowerShell.
 - Keep development modular enough for contributors to work on functions, config, UI, docs, and tooling independently.
-- Make install, tweak, feature, repair, update, and ISO workflows discoverable from the WPF UI.
+- Make install, tweak, feature, repair, and update workflows discoverable from the WPF UI.
 - Keep common lists and options declarative in JSON config where possible.
 - Preserve a repeatable compile process so local builds and GitHub Actions builds produce the distributable script from the same inputs.
 
@@ -56,10 +57,11 @@ WinUtil is a Windows PowerShell utility with a WPF interface. The repository is 
 2. Append every file under `functions/` recursively.
 3. Convert each `config/*.json` file into embedded `$sync.configs` objects.
 4. Special-case `config/applications.json` so keys receive the `WPFInstall` prefix in compiled config.
-5. Embed `xaml/inputXML.xaml` into `$inputXML`.
-6. Embed `tools/autounattend.xml` into `$WinUtilAutounattendXml`.
+5. Encode each `maintenance/*.ps1` script as UTF-8/base64 and embed the payload dictionary into `$sync.configs.maintenanceScripts`.
+   Embed `maintenance/original/*` as raw bytes/base64 in `$sync.configs.maintenanceOriginalFiles`.
+6. Embed `xaml/inputXML.xaml` into `$inputXML`.
 7. Append `scripts/main.ps1`.
-8. Write the result to root `winutil.ps1`.
+8. Write the result to root `winutil.ps1` as UTF-8, preserving Vietnamese account-name normalization on Windows PowerShell 5.1.
 
 Because the final script is concatenated, code cannot rely on runtime module imports or source-relative dot-sourcing unless the compiled script will also contain the required code/data.
 
@@ -76,6 +78,7 @@ Because the final script is concatenated, code cannot rely on runtime module imp
 - UI layout lives in `xaml/inputXML.xaml`.
 - Named WPF controls are discovered and stored in `$sync`.
 - Button/action wiring follows a naming convention: an element named like `WPFThingButton` maps to a function named like `Invoke-WPFThingButton`.
+- Main navigation contains Install, Tweaks, Config, and Maintenance. Maintenance groups its task switches, immediate report button, and Windows Update switch in one compact panel. AppX opens from Tweaks. Tab numbers follow this order, with AppX last.
 
 ## Configuration Contract
 
@@ -83,12 +86,12 @@ Because the final script is concatenated, code cannot rely on runtime module imp
 - `config/applications.json` defines installable applications; each entry includes the fields expected by tests and UI code, such as package manager IDs, category, display content, description, and link.
 - `config/tweaks.json` defines Windows tweaks; registry and service changes include original values or original states when applicable so undo workflows can restore user systems.
 - Preset and navigation files reference valid config keys. Renaming a config key requires updating all presets, UI references, docs, and code paths together.
+- `config/maintenance.json` defines one compact ordered panel: switches that create/remove the original daily shutdown and cleanup tasks, create/remove the original C:/D: monitoring task, and enable/disable Windows Update, plus a button that exports software/DxDiag reports immediately. Switches refresh from actual system state after each operation. Removing a task keeps installed files and reports. The UI confirms the original cleanup and D: hiding behavior and uses the shared runspace pool. Original files are deployed under protected `C:\IT-MAINTENANCE` with backups; no account setup or restart is required for report export.
 
 ## Safety Requirements
 
-- Registry, service, package manager, Windows Update, AppX removal, and ISO operations affect the host system and are treated as high-risk.
+- Registry, service, package manager, Windows Update, and AppX removal operations affect the host system and are treated as high-risk.
 - Tweak changes include undo metadata when the schema supports it, so changes stay reversible.
-- ISO workflows never modify the user's original ISO file; they work on copied/mounted content.
 
 ## Docs Site (Astro)
 

@@ -8,8 +8,8 @@ BeforeAll {
     function Invoke-WPFUIElements {
         param($configVariable, [string]$targetGridName, [int]$columncount)
     }
-    function Invoke-WinUtilISOCheckExistingWork { }
     function Reset-WPFCheckBoxes { param([bool]$doToggles) }
+    function Invoke-WPFMaintenanceToggle { param([string]$Name,[switch]$Refresh) }
 
     . (Join-Path $script:repoRoot "functions\public\Initialize-WPFUI.ps1")
     . (Join-Path $script:repoRoot "functions\private\Initialize-WinUtilTabContent.ps1")
@@ -23,12 +23,14 @@ Describe "Initialize-WinUtilTabContent" {
                 tweaks = [pscustomobject]@{}
                 feature = [pscustomobject]@{}
                 appx = [pscustomobject]@{}
+                maintenance = [pscustomobject]@{}
             }
         })
 
         Mock Invoke-WPFUIElements { }
         Mock Initialize-WPFUI { }
         Mock Reset-WPFCheckBoxes { }
+        Mock Invoke-WPFMaintenanceToggle { }
     }
 
     AfterEach {
@@ -68,9 +70,11 @@ Describe "Initialize-WinUtilTabContent" {
         Initialize-WinUtilTabContent -TabName "Tweaks"
         Initialize-WinUtilTabContent -TabName "Config"
         Initialize-WinUtilTabContent -TabName "AppX"
+        Initialize-WinUtilTabContent -TabName "Maintenance"
         Initialize-WinUtilTabContent -TabName "Tweaks"
         Initialize-WinUtilTabContent -TabName "Config"
         Initialize-WinUtilTabContent -TabName "AppX"
+        Initialize-WinUtilTabContent -TabName "Maintenance"
 
         Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
             $targetGridName -eq "tweakspanel" -and $columncount -eq 2
@@ -81,24 +85,15 @@ Describe "Initialize-WinUtilTabContent" {
         Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
             $targetGridName -eq "appxpanel" -and $columncount -eq 2
         }
-    }
-
-    It "checks for existing Win11ISO work when the tab is initialized" {
-        Add-Type -AssemblyName WindowsBase
-        $dispatcher = [pscustomobject]@{}
-        $dispatcher | Add-Member -MemberType ScriptMethod -Name BeginInvoke -Value {
-            param($priority, $action)
-            $action.Invoke()
+        Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
+            $targetGridName -eq "maintenancepanel" -and $columncount -eq 1
         }
-        $script:sync.Form = [pscustomobject]@{ Dispatcher = $dispatcher }
-        Mock Invoke-WinUtilISOCheckExistingWork { }
-
-        Initialize-WinUtilTabContent -TabName "Win11ISO"
-        Initialize-WinUtilTabContent -TabName "Win11ISO"
-
-        Should -Invoke -CommandName Invoke-WinUtilISOCheckExistingWork -Times 1 -Exactly
-        $script:sync.InitializedTabs["Win11ISO"] | Should -BeTrue
+        Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 3 -Exactly -ParameterFilter { $Refresh }
+        Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 1 -Exactly -ParameterFilter { $Refresh -and $Name -eq 'WPFToggleMaintenanceTasks' }
+        Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 1 -Exactly -ParameterFilter { $Refresh -and $Name -eq 'WPFToggleMaintenanceMonitor' }
+        Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 1 -Exactly -ParameterFilter { $Refresh -and $Name -eq 'WPFToggleWindowsUpdate' }
     }
+
 }
 
 Describe "Initialize-WPFUI" {

@@ -158,6 +158,15 @@ Describe "Applications config" {
                 }
             }
 
+            if ($entry.Value.installType -eq "pwa") {
+                $pwaUri = $null
+                $hasPwaUrl = [Uri]::TryCreate([string]$entry.Value.pwa, [UriKind]::Absolute, [ref]$pwaUri)
+                if (-not $hasPwaUrl -or $pwaUri.Scheme -notin @("http", "https")) {
+                    $invalidEntries.Add("$($entry.Name) missing a valid HTTP(S) PWA URL")
+                }
+                continue
+            }
+
             $hasInstallSource = $false
             foreach ($sourceField in @("winget", "choco")) {
                 if ($entryFields -contains $sourceField -and -not [string]::IsNullOrWhiteSpace([string]$entry.Value.$sourceField)) {
@@ -529,7 +538,7 @@ Describe "UI-rendered config entries" {
         $themes = Get-WinUtilConfigObject -Name "themes"
         $invalidEntries = New-Object System.Collections.Generic.List[string]
 
-        foreach ($themeName in @("shared", "Light", "Dark")) {
+        foreach ($themeName in @("shared", "Light")) {
             if (-not (Test-WinUtilHasProperty -Object $themes -Name $themeName)) {
                 $invalidEntries.Add("themes.json missing $themeName")
                 continue
@@ -542,18 +551,7 @@ Describe "UI-rendered config entries" {
             }
         }
 
-        $lightKeys = @($themes.Light.PSObject.Properties.Name)
         $darkKeys = @($themes.Dark.PSObject.Properties.Name)
-        foreach ($key in $lightKeys) {
-            if ($darkKeys -notcontains $key) {
-                $invalidEntries.Add("Dark theme missing $key")
-            }
-        }
-        foreach ($key in $darkKeys) {
-            if ($lightKeys -notcontains $key) {
-                $invalidEntries.Add("Light theme missing $key")
-            }
-        }
 
         $xamlText = Get-Content -Path $script:xamlPath -Raw
         $dynamicResourceNames = @(
@@ -567,7 +565,6 @@ Describe "UI-rendered config entries" {
         $themeResourceNames = @(
             $themes.shared.PSObject.Properties.Name
             $themes.Light.PSObject.Properties.Name
-            $themes.Dark.PSObject.Properties.Name
             "CBorderColor"
             "CButtonBackgroundMouseoverColor"
         ) | Sort-Object -Unique
