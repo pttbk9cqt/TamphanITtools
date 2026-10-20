@@ -98,6 +98,7 @@ Because the final script is concatenated, code cannot rely on runtime module imp
 - Registry, service, package manager, Windows Update, and AppX removal operations affect the host system and are treated as high-risk.
 - Tweak changes include undo metadata when the schema supports it, so changes stay reversible.
 - Windows Update switch completion reports applied configuration, not an unconditional restart requirement. A restart requested by Windows after installing updates is separate.
+- Update's separate `Fix no respoding Update` panel invokes confirmed background cache repair, serialized with other operations. Consent includes restoring disabled update defaults. BITS, wuauserv and cryptsvc are stopped/started with 20-second status waits; cache directories are renamed to unique sibling backups, never deleted. Redirected directories are rejected. A partial rename failure attempts rollback before restoring originally running services. Backups remain if recovery fails; errors and paths are logged. UI completion is queued with BeginInvoke and refreshes both switches from worker-read state. Repair does not change boot settings, restart Windows, execute DISM/SFC automatically, or guarantee all update errors are fixed.
 
 ## Project Documentation
 

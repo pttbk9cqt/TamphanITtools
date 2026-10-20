@@ -28,6 +28,8 @@ Application selection stays in the app list, without a Selected Apps popup. Twea
 
 The compiled script retains shared package-manager, undo, logging and Maintenance payloads. Retired UI styles, unused FOSS metadata and the excluded Notepad removal hook have been removed without dropping active features.
 
+Update includes a separate **Fix no respoding Update** panel. Repair asks for confirmation (including restoring disabled update defaults), runs in the background, and renames update caches to unique `.winutil-backup-*` folders instead of deleting them. Do not run during update installation. Backups are retained for manual review; cached downloads/local history may be rebuilt. No Safe Mode or automatic restart is used, and not every update error can be fixed by a cache reset.
+
 ### How to open an admin terminal
 
 - **Start menu:** Right-click Start → *Windows PowerShell (Admin)* or *Terminal (Admin)*

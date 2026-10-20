@@ -57,6 +57,7 @@ function Invoke-WPFButton {
         }
         "WPFOpenWindowsUpdate" {Invoke-WPFUpdatePanel -Target WindowsUpdate}
         "WPFOpenStoreDownloads" {Invoke-WPFUpdatePanel -Target StoreDownloads}
+        "WPFRepairWindowsUpdate" {Invoke-WPFRepairWindowsUpdate}
         "WPFFixesWinget" {Invoke-WPFFixesWinget}
         "WPFInstall" {Invoke-WPFInstall}
         "WPFUninstall" {Invoke-WPFUnInstall}

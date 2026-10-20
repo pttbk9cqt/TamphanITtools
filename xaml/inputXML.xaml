@@ -977,6 +977,14 @@
                         <TextBlock Text="Update" FontSize="24" FontWeight="Bold" Margin="15,10,15,5"/>
                         <TextBlock Text="Manage Windows Update and open Microsoft Store downloads." TextWrapping="Wrap" Margin="15,0,15,16"/>
                         <Grid Name="updatepanel" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+                        <Border Style="{StaticResource BorderStyle}" Margin="10,12,10,10">
+                            <StackPanel Margin="12">
+                                <TextBlock Text="Fix no respoding Update" FontSize="{DynamicResource HeaderFontSize}" Margin="0,0,0,10"/>
+                                <TextBlock Text="Repair Windows Update cache. Existing cache is kept as a backup. No automatic restart or Safe Mode." TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                <Button Name="WPFRepairWindowsUpdate" Content="Repair Windows Update" Width="350" HorizontalAlignment="Left"
+                                    ToolTip="Confirm before restoring disabled update settings and resetting update cache. Do not run while updates are installing."/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
