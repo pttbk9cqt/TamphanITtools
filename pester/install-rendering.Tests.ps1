@@ -21,9 +21,6 @@ Describe "Install app rendering startup contract" {
         $renderScript | Should -Match 'Dispatcher\.BeginInvoke'
         $renderScript | Should -Match 'Invoke-WinUtilInstallAppRenderNextBatch'
         $renderScript | Should -Match 'Initialize-InstallAppEntry'
-        $renderScript | Should -Match 'Find-AppsByNameOrDescription -SearchString \$sync\.SearchBar\.Text -Categories \$selectedCategories'
-        # A batch has to be filtered when either filter is on, not only when there is search text
-        $renderScript | Should -Match '\$selectedCategories\.Count -gt 0'
         $renderScript | Should -Match '\$sync\.InstallAppEntriesRendered = \$true'
     }
 
@@ -43,13 +40,11 @@ Describe "Install app rendering startup contract" {
 
         $previousSync = Get-Variable -Name sync -Scope Global -ErrorAction SilentlyContinue
         $previousInitializeAppEntry = Get-Item -Path Function:\Initialize-InstallAppEntry -ErrorAction SilentlyContinue
-        $previousSearch = Get-Item -Path Function:\Find-AppsByNameOrDescription -ErrorAction SilentlyContinue
         $errorCountBefore = $global:Error.Count
 
         try {
             $global:sync = [Hashtable]::Synchronized(@{})
             $global:sync.currentTab = "Install"
-            $global:sync.SearchBar = [pscustomobject]@{ Text = "" }
             $global:sync.Form = [pscustomobject]@{ Dispatcher = [System.Windows.Threading.Dispatcher]::CurrentDispatcher }
             $global:sync.InstallAppRenderQueue = [System.Collections.Queue]::new()
 
@@ -59,11 +54,6 @@ Describe "Install app rendering startup contract" {
                 param($TargetElement, $AppKey)
                 $renderedApps.Add($AppKey)
                 return "entry:$AppKey"
-            }
-
-            function global:Find-AppsByNameOrDescription {
-                param($SearchString, $Category)
-                throw "Search should not run for an empty search box in this test."
             }
 
             $global:sync.InstallAppRenderQueue.Enqueue([pscustomobject]@{ TargetElement = [pscustomobject]@{}; AppKeys = @("AppA", "AppB") })
@@ -100,8 +90,7 @@ Describe "Install app rendering startup contract" {
             }
 
             foreach ($functionBackup in @(
-                    @{ Name = "Initialize-InstallAppEntry"; Backup = $previousInitializeAppEntry },
-                    @{ Name = "Find-AppsByNameOrDescription"; Backup = $previousSearch }
+                    @{ Name = "Initialize-InstallAppEntry"; Backup = $previousInitializeAppEntry }
                 )) {
                 if ($functionBackup.Backup) {
                     Set-Item -Path "Function:\$($functionBackup.Name)" -Value $functionBackup.Backup.ScriptBlock

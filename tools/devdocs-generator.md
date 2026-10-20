@@ -18,13 +18,13 @@ The `devdocs-generator.ps1` script automatically generates Astro/Starlight markd
 
 ### 1. Loads the Data
 
-- Reads `config/tweaks.json` and `config/feature.json`
+- Reads `config/tweaks.json` and `config/maintenance.json`
 - Reads all `.ps1` function files from `functions/public/` and `functions/private/`
 - Parses `Invoke-WPFButton.ps1` to build a mapping of button names to their function names
 
 ### 2. Updates Links in JSON
 
-- Adds or updates a `"link"` property on every entry in both JSON config files
+- Adds or updates a `"link"` property on tweak entries; existing Maintenance tool reference URLs are preserved
 - Each link points to that entry's documentation page on the Astro/Starlight site
 - The updated links are automatically committed back to the JSON config files as part of the pre-release workflow
 
@@ -42,19 +42,20 @@ For each entry in `tweaks.json` that belongs to a documented category:
 - **All other types** get the raw JSON snippet embedded with correct line numbers from the source file
 - Entries with **registry changes** get a Registry Changes section added
 
-### 5. Generates Feature Documentation
+### 5. Generates Maintenance Tool Documentation
 
-For each entry in `feature.json` that belongs to a documented category:
+For linked button entries in `maintenance.json`:
 
-- **Fixes and Legacy Windows Panels** get the mapped PowerShell function file embedded
-- **Features** get the raw JSON snippet embedded with correct line numbers
+- Function-backed buttons embed the configured PowerShell function.
+- Legacy Windows Panels embed their raw JSON definition.
+- Output uses the existing `link` path under `code-reference/features/` to preserve WinGet and Windows panel URLs.
 
 ### 6. Output Format
 
 - Every `.mdx` file gets Starlight frontmatter with `title` and `description` (description comes from the entry's `Description` field when present)
 - A `:::note` aside points back at the source file (JSON config or PowerShell function) it was generated from
 - Code blocks use Starlight/Expressive Code syntax with a `title` attribute naming the source file
-- Files are organized into category subdirectories matching the JSON `category` field
+- Tweak pages use category subdirectories; Maintenance tool pages preserve their configured link paths
 
 ## Documented Categories
 
@@ -64,8 +65,7 @@ The script generates docs for entries in these categories:
 - z--Advanced-Tweaks---CAUTION
 - Customize Preferences
 - Performance Plans
-- Features
-- Fixes
+- WinGet reinstall
 - Legacy Windows Panels
 
 ## File Structure
@@ -78,9 +78,8 @@ docs/src/content/docs/code-reference/
     Customize-Preferences/
     Performance-Plans/
   features/
-    Features/
-    Fixes/
-    Legacy-Windows-Panels/
+    fixes/
+    legacy-windows-panels/
 ```
 
 The Starlight sidebar picks these up automatically via `autogenerate` entries in `docs/astro.config.mjs` for the `code-reference/tweaks` and `code-reference/features` directories, so no sidebar edits are needed when new entries are added.
@@ -93,8 +92,8 @@ The script strips common prefixes from the JSON key names using the pattern `WPF
 | ------------------- | -------------- |
 | `WPFTweaksHiber`    | `Hiber.mdx`     |
 | `WPFTweaksDeBloat`  | `DeBloat.mdx`   |
-| `WPFFeatureshyperv` | `hyperv.mdx`    |
-| `WPFPanelDISM`      | `DISM.mdx`      |
+| `WPFFixesWinget`    | `fixes/winget.mdx` |
+| `WPFPanelControl`   | `legacy-windows-panels/control.mdx` |
 
 ## Key Points
 

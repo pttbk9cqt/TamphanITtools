@@ -90,6 +90,7 @@ BeforeAll {
         $packages = @{}
         $packages["Winget"] = [System.Collections.Generic.List[string]]::new()
         $packages["Choco"] = [System.Collections.Generic.List[string]]::new()
+        $packages["PWA"] = [System.Collections.Generic.List[string]]::new()
 
         foreach ($package in $Winget) {
             $null = $packages["Winget"].Add($package)

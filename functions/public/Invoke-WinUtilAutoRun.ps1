@@ -2,7 +2,7 @@ function Invoke-WinUtilAutoRun {
     <#
 
     .SYNOPSIS
-        Runs Install, Tweaks, and Features with optional UI invocation.
+        Runs Install, Tweaks, and AppX with optional UI invocation.
     #>
 
     function BusyWait {
@@ -15,12 +15,6 @@ function Invoke-WinUtilAutoRun {
     if ($sync.selectedTweaks.Count -gt 0) {
         Write-Host "Applying tweaks..."
         Invoke-WPFtweaksbutton
-        BusyWait
-    }
-
-    if ($sync.selectedFeatures.Count -gt 0) {
-        Write-Host "Applying features..."
-        Invoke-WPFFeatureInstall
         BusyWait
     }
 

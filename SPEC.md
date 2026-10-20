@@ -26,7 +26,7 @@ WinUtil is a Windows PowerShell utility with a WPF interface. The repository is 
 - `functions/public/`: public/UI-facing PowerShell functions.
 - `functions/private/`: internal helper PowerShell functions.
 - `config/`: JSON configuration consumed at compile time and embedded into `$sync.configs`.
-- `maintenance/`: standalone ComputerMaintenance worker scripts embedded by the compiler for installation or export from the Maintenance tab.
+- `maintenance/`: the RunOriginal.ps1 adapter embedded by the compiler for the active original Maintenance workflows.
 - `maintenance/original/`: the four original IT-MAINTENANCE batch/text workflow files, embedded byte-for-byte for the three Maintenance actions.
 - `xaml/inputXML.xaml`: WPF UI markup embedded into the compiled script.
 - `pester/`: Pester tests for config and function checks.
@@ -38,7 +38,7 @@ WinUtil is a Windows PowerShell utility with a WPF interface. The repository is 
 
 - Provide a single-script Windows utility that can be launched from PowerShell.
 - Keep development modular enough for contributors to work on functions, config, UI, docs, and tooling independently.
-- Make install, tweak, feature, repair, and update workflows discoverable from the WPF UI.
+- Make install, tweak, maintenance, repair, and update workflows discoverable from the WPF UI.
 - Keep common lists and options declarative in JSON config where possible.
 - Preserve a repeatable compile process so local builds and GitHub Actions builds produce the distributable script from the same inputs.
 
@@ -78,7 +78,7 @@ Because the final script is concatenated, code cannot rely on runtime module imp
 - UI layout lives in `xaml/inputXML.xaml`.
 - Named WPF controls are discovered and stored in `$sync`.
 - Button/action wiring follows a naming convention: an element named like `WPFThingButton` maps to a function named like `Invoke-WPFThingButton`.
-- Main navigation contains Install, Tweaks, Config, and Maintenance. Maintenance groups its task switches, immediate report button, and Windows Update switch in one compact panel. AppX opens from Tweaks. Tab numbers follow this order, with AppX last.
+- Main navigation contains Install, Tweaks, and Maintenance. Maintenance groups its task switches, report button, Windows Update switch, Task Scheduler viewer, and WinGet reinstall in one compact panel, with all fourteen Legacy Windows Panels shortcuts in a second column. Config, optional Features, other Fixes, PowerShell Profile, and Remote Access controls have been removed. AppX opens from Tweaks. Tab numbers follow this order, with AppX last. The Settings menu, search bar, and category filter chips are removed; command-line `-Config` imports remain supported through `Import-WinUtilConfig`. Legacy Windows Panels centers its heading and shortcut buttons within its own column.
 
 ## Configuration Contract
 
@@ -86,7 +86,7 @@ Because the final script is concatenated, code cannot rely on runtime module imp
 - `config/applications.json` defines installable applications; each entry includes the fields expected by tests and UI code, such as package manager IDs, category, display content, description, and link.
 - `config/tweaks.json` defines Windows tweaks; registry and service changes include original values or original states when applicable so undo workflows can restore user systems.
 - Preset and navigation files reference valid config keys. Renaming a config key requires updating all presets, UI references, docs, and code paths together.
-- `config/maintenance.json` defines one compact ordered panel: switches that create/remove the original daily shutdown and cleanup tasks, create/remove the original C:/D: monitoring task, and enable/disable Windows Update, plus a button that exports software/DxDiag reports immediately. Switches refresh from actual system state after each operation. Removing a task keeps installed files and reports. The UI confirms the original cleanup and D: hiding behavior and uses the shared runspace pool. Original files are deployed under protected `C:\IT-MAINTENANCE` with backups; no account setup or restart is required for report export.
+- `config/maintenance.json` defines two columns: a compact ordered IT-MAINTENANCE panel with WinGet reinstall, and Legacy Windows Panels. The maintenance workflows include switches that create/remove the original daily shutdown and cleanup tasks, create/remove the original C:/D: monitoring task, and enable/disable Windows Update, plus a button that exports software/DxDiag reports immediately. Buttons dispatch through their maintenance `Action`, existing `function`, or `InvokeScript` metadata. Retired feature keys are rejected by strict imports and reported as skipped in legacy imports. Switches refresh from actual system state after each operation. Removing a task keeps installed files and reports. The UI confirms the original cleanup and D: hiding behavior and uses the shared runspace pool. Original files are deployed under protected `C:\IT-MAINTENANCE` with backups; no account setup or restart is required for report export.
 
 ## Safety Requirements
 
@@ -97,7 +97,7 @@ Because the final script is concatenated, code cannot rely on runtime module imp
 
 - `docs/` is an Astro + Starlight site, independent of `Compile.ps1`'s build (its own `package.json`/`node_modules`, deployed via the `docs.yaml` GitHub Actions workflow to GitHub Pages).
 - Pages live under `docs/src/content/docs/` (`.mdx`), organized into `guides/`, `code-reference/`, plus top-level pages like `faq.mdx`, `knownissues.mdx`, `contributing.mdx`, `index.mdx`.
-- `docs/src/content/docs/code-reference/tweaks/` and `.../features/` are auto-generated by `tools/devdocs-generator.ps1` from `config/tweaks.json`/`config/feature.json` and the relevant PowerShell function files. Other pages under `code-reference/` (e.g. `architecture.mdx`) are hand-written and untouched by the generator.
+- `docs/src/content/docs/code-reference/tweaks/` and `.../features/` are auto-generated by `tools/devdocs-generator.ps1` from `config/tweaks.json`/`config/maintenance.json` and the relevant PowerShell function files. Other pages under `code-reference/` (e.g. `architecture.mdx`) are hand-written and untouched by the generator.
 - Sidebar entries in `docs/astro.config.mjs` must match actual page slugs under `docs/src/content/docs/`.
 - `docs/public/` is tracked source for static assets (favicons, etc.), not generated output. Generated/ignored paths are listed in `docs/.gitignore` (`dist/`, `.astro/`, `node_modules/`, local env files).
 - `docs/Dockerfile` and `docs/docker-compose.yml` (service `winutil-astro`) containerize the site's npm tooling; see AGENTS.md's Dependency Installs, Builds, And Dev Servers for why and how agents must use them instead of running npm on the host.

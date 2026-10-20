@@ -156,6 +156,9 @@ function Invoke-WPFUIElements {
             $label = New-Object Windows.Controls.Label
             $categoryCleanName = $category -replace ".*__", ""
             $label.Content = $categoryCleanName
+            if ($category -eq 'Legacy Windows Panels') {
+                $label.HorizontalContentAlignment = 'Center'
+            }
             $label.Focusable = $true
             $label.IsTabStop = $true
             [System.Windows.Automation.AutomationProperties]::SetName($label, $categoryCleanName)
@@ -434,7 +437,7 @@ function Invoke-WPFUIElements {
                         $button = New-Object Windows.Controls.Button
                         $button.Name = $entryInfo.Name
                         $button.Content = $entryInfo.Content
-                        $button.HorizontalAlignment = "Left"
+                        $button.HorizontalAlignment = if ($category -eq 'Legacy Windows Panels') { 'Center' } else { 'Left' }
                         $button.SetResourceReference([Windows.Controls.Control]::MarginProperty, "ButtonMargin")
                         $button.SetResourceReference([Windows.Controls.Control]::FontSizeProperty, "ButtonFontSize")
                         if ($entryInfo.ButtonWidth) {

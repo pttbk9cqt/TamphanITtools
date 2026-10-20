@@ -69,7 +69,7 @@ BeforeAll {
 
     function script:Get-WinUtilGeneratedControlNames {
         $names = New-Object System.Collections.Generic.List[string]
-        foreach ($configName in @("appnavigation", "tweaks", "feature", "appx", "maintenance")) {
+        foreach ($configName in @("appnavigation", "tweaks", "appx", "maintenance")) {
             $config = Get-WinUtilConfigObject -Name $configName
             foreach ($entry in $config.PSObject.Properties.Name) {
                 $names.Add($entry)
@@ -127,29 +127,12 @@ Describe "XAML document" {
             "WPFTab2",
             "WPFTab3",
             "WPFTab4",
-            "WPFTab5",
             "WPFTab1BT",
             "WPFTab2BT",
             "WPFTab3BT",
-            "WPFTab4BT",
-            "SearchBar",
-            "SearchBarIcon",
-            "SearchBarClearButton",
-            "WPFSearchChips",
-            "WPFSearchChipAll",
-            "WPFSearchChipBrowsers",
-            "WPFSearchChipCommunications",
-            "WPFSearchChipDevelopment",
-            "WPFSearchChipGames",
-            "WPFSearchChipMicrosoftTools",
-            "WPFSearchChipMultimediaTools",
-            "WPFSearchChipProTools",
-            "WPFSearchChipSelfhostedTools",
-            "WPFSearchChipUtilities",
             "appscategory",
             "appspanel",
             "tweakspanel",
-            "featurespanel",
             "maintenancepanel",
             "appxpanel",
             "WPFstandard",
@@ -175,16 +158,16 @@ Describe "XAML document" {
         }
     }
 
-    It "omits the retired Document search chip and its startup wiring" {
+    It "removes Settings and search controls and their startup wiring" {
         $mainScript = Get-Content -Path $script:mainScriptPath -Raw
-        $script:xaml.SelectSingleNode('//*[@Name="WPFSearchChipDocument"]') | Should -BeNullOrEmpty
-        $mainScript | Should -Not -Match 'WPFSearchChipDocument'
+        $script:xaml.SelectSingleNode('//*[@Name="SettingsButton" or @Name="SettingsPopup" or @Name="SearchBar" or @Name="WPFSearchChips"]') | Should -BeNullOrEmpty
+        $mainScript | Should -Not -Match 'SettingsButton|SettingsPopup|SearchBar|SearchChip|Find-AppsByNameOrDescription|Find-TweaksByNameOrDescription|Invoke-WPFPopup'
     }
 
     It "renders the compact Maintenance controls from one config panel" {
         $maintenanceTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Header="Maintenance"]')
         $panel = $maintenanceTab.SelectSingleNode('.//*[@Name="maintenancepanel"]')
-        [int]$panel.GetAttribute('Width') | Should -BeLessOrEqual 440
+        [int]$panel.GetAttribute('Width') | Should -Be 880
         $panel.GetAttribute('HorizontalAlignment') | Should -Be 'Left'
         @($maintenanceTab.SelectNodes('.//*[local-name()="CheckBox"]')).Count | Should -Be 0
         $maintenanceTab.SelectSingleNode('.//*[local-name()="UniformGrid"]') | Should -BeNullOrEmpty
@@ -202,9 +185,8 @@ Describe "XAML document" {
         $expectedTabs = @(
             "WPFTab1:Install",
             "WPFTab2:Tweaks",
-            "WPFTab3:Config",
-            "WPFTab4:Maintenance",
-            "WPFTab5:AppX"
+            "WPFTab3:Maintenance",
+            "WPFTab4:AppX"
         )
 
         if (@($actualTabs).Count -ne $expectedTabs.Count) {
@@ -221,7 +203,7 @@ Describe "XAML document" {
     It "opens AppX removal from Tweaks and provides a return path" {
         $navPanel = $script:xaml.SelectSingleNode('//*[local-name()="StackPanel"][@Name="NavDockPanel"]')
         $tweaksTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab2"]')
-        $appxTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab5"]')
+        $appxTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab4"]')
         $openButton = $tweaksTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFAppxRemoval"]')
         $buttonNames = @($openButton.ParentNode.SelectNodes('./*[local-name()="Button"]') | ForEach-Object { $_.GetAttribute("Name") })
         $getInstalledIndex = [array]::IndexOf($buttonNames, "WPFGetInstalledTweaks")
@@ -229,13 +211,13 @@ Describe "XAML document" {
         $buttonSource = Get-Content -Path $script:buttonScriptPath -Raw
         $tabSource = Get-Content -Path (Join-Path $script:functionRoot "public\Invoke-WPFTab.ps1") -Raw
 
-        $navPanel.SelectSingleNode('./*[local-name()="ToggleButton"][@Name="WPFTab5BT"]') | Should -BeNullOrEmpty
+        $navPanel.SelectSingleNode('./*[local-name()="ToggleButton"][@Name="WPFTab4BT"]') | Should -BeNullOrEmpty
         $openButton.GetAttribute("Content").Trim() | Should -Be "AppX Removal"
         $openAppxIndex | Should -Be ($getInstalledIndex + 1)
         $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFBackToTweaks"]') | Should -Not -BeNullOrEmpty
         $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFInstallSelectedAppx"]') | Should -Not -BeNullOrEmpty
         $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFRemoveSelectedAppx"]') | Should -Not -BeNullOrEmpty
-        $buttonSource | Should -Match '"WPFAppxRemoval"\s*\{Invoke-WPFTab "WPFTab5BT"\}'
+        $buttonSource | Should -Match '"WPFAppxRemoval"\s*\{Invoke-WPFTab "WPFTab4BT"\}'
         $buttonSource | Should -Match '"WPFBackToTweaks"\s*\{Invoke-WPFTab "WPFTab2BT"\}'
         $buttonSource | Should -Match '"WPFInstallSelectedAppx"\s*\{Invoke-WPFAppxInstall\}'
         $tabSource | Should -Match '\$sync\.\$tabNav\.Items\[\$tabNumber\]\.IsSelected = \$true'
@@ -246,7 +228,6 @@ Describe "XAML document" {
         $minimizeButton = $script:xaml.SelectSingleNode('//*[local-name()="Button"][@Name="WPFMinimizeButton"]')
         $actionPanel = $minimizeButton.ParentNode
         $topBarButtonNames = @(
-            "SettingsButton",
             "WPFMinimizeButton",
             "WPFMaximizeButton",
             "WPFCloseButton"
@@ -259,32 +240,6 @@ Describe "XAML document" {
             $button = $script:xaml.SelectSingleNode("//*[local-name()='Button'][@Name='$buttonName']")
             $button.GetAttribute("VerticalAlignment") | Should -Be "Center"
         }
-    }
-
-    It "keeps the responsive search controls within the available screen width" {
-        $window = $script:xaml.DocumentElement
-        $searchBar = $script:xaml.SelectSingleNode('//*[local-name()="TextBox"][@Name="SearchBar"]')
-        $searchBorder = $searchBar.ParentNode.ParentNode
-        $mainScript = Get-Content -Path $script:mainScriptPath -Raw
-
-        $window.GetAttribute("MinWidth") | Should -Be "800"
-        $searchBorder.GetAttribute("Width") | Should -BeNullOrEmpty
-        $searchBorder.GetAttribute("HorizontalAlignment") | Should -Be "Stretch"
-        $searchBar.GetAttribute("Width") | Should -BeNullOrEmpty
-        $searchBar.GetAttribute("HorizontalAlignment") | Should -Be "Stretch"
-        $mainScript | Should -Match '\$sync\.Form\.MinWidth = "1150"'
-        $mainScript | Should -Match '\$sync\.Form\.MinWidth = \[Math\]::Min\(\[double\]\$sync\.Form\.MinWidth, \[double\]\$screenWidth\)'
-    }
-
-    It "shows only one search action glyph at a time" {
-        $searchIcon = $script:xaml.SelectSingleNode('//*[local-name()="TextBlock"][@Name="SearchBarIcon"]')
-        $clearButton = $script:xaml.SelectSingleNode('//*[local-name()="Button"][@Name="SearchBarClearButton"]')
-        $mainScript = Get-Content -Path $script:mainScriptPath -Raw
-
-        $searchIcon | Should -Not -BeNullOrEmpty
-        $clearButton | Should -Not -BeNullOrEmpty
-        $mainScript | Should -Match '\$sync\.SearchBarClearButton\.Visibility = "Visible"\s+\$sync\.SearchBarIcon\.Visibility = "Collapsed"'
-        $mainScript | Should -Match '\$sync\.SearchBarClearButton\.Visibility = "Collapsed"\s+\$sync\.SearchBarIcon\.Visibility = "Visible"'
     }
 
     It "scopes toggle button styles without leaking into combo boxes" {
@@ -302,7 +257,7 @@ Describe "XAML document" {
         $comboToggleStyle | Should -Not -BeNullOrEmpty
         $comboToggle.GetAttribute("Style") | Should -Be "{StaticResource ComboBoxToggleButtonStyle}"
         $comboItemStyle | Should -Not -BeNullOrEmpty
-        $navButtons.Count | Should -Be 4
+        $navButtons.Count | Should -Be 3
         foreach ($navButton in $navButtons) {
             $navButton.GetAttribute("Style") | Should -Be "{StaticResource TabToggleButton}"
         }
@@ -329,7 +284,7 @@ Describe "XAML document" {
         $restoreIcon.GetAttribute("Value") | Should -Be ([string][char]0xE923)
         $closeButton.GetAttribute("Content") | Should -Be ([string][char]0xE8BB)
         $maximizeStyle.GetAttribute("BasedOn") | Should -Be "{StaticResource HoverButtonStyle}"
-        [int]$themes.shared.CloseIconFontSize | Should -BeLessThan ([int]$themes.shared.SettingsIconFontSize)
+        [int]$themes.shared.CloseIconFontSize | Should -Be 12
     }
 }
 
@@ -389,7 +344,6 @@ Describe "XAML and sync wiring" {
             "selectedApps",
             "selectedTweaks",
             "selectedToggles",
-            "selectedFeatures",
             "currentTab",
             "selectedAppsStackPanel",
             "selectedAppsstackPanel",
@@ -440,7 +394,7 @@ Describe "WPF handler wiring" {
         $sourceText = Get-WinUtilSourceText
         $functionNames = @(Get-WinUtilTopLevelFunctionNames)
         $featureFunctions = @(
-            (Get-WinUtilConfigObject -Name "feature").PSObject.Properties |
+            (Get-WinUtilConfigObject -Name "maintenance").PSObject.Properties |
                 Where-Object { $_.Value.function -and $_.Value.function -like "Invoke-WPF*" } |
                 ForEach-Object { $_.Value.function }
         )
@@ -465,7 +419,7 @@ Describe "WPF handler wiring" {
                 Where-Object { $_.Name -like "WPF*" -and $_.Type -in @("Button", "ToggleButton") }
         )
         $buttonSwitchNames = @(Get-WinUtilButtonSwitchNames)
-        $featureNames = @((Get-WinUtilConfigObject -Name "feature").PSObject.Properties.Name)
+        $featureNames = @((Get-WinUtilConfigObject -Name "maintenance").PSObject.Properties.Name)
         $mainScript = Get-Content -Path $script:mainScriptPath -Raw
         $unhandledButtons = New-Object System.Collections.Generic.List[string]
 

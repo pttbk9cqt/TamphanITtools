@@ -176,7 +176,7 @@ Describe "Compiled WinUtil sanity" {
             'function Add-SelectedAppsMenuItem',
             ('$sync.configs.applications = @' + "'"),
             ('$inputXML = @' + "'"),
-            '$sync.SearchBarClearButton.Add_Click({'
+            '$commonKeyEvents = {'
         )
 
         $lastIndex = -1

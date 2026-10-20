@@ -1,5 +1,5 @@
 {
-        "7Zip": {
+    "7Zip": {
         "category": "TamPhan",
         "content": "7-Zip",
         "description": "7-Zip is a free and open-source file archiver, a utility that is used to compress and extract files.",
@@ -25,7 +25,7 @@
         "winget": "Famatech.AdvancedIPScanner",
         "foss": false
     },
-        "alldup": {
+    "alldup": {
         "category": "TamPhan",
         "choco": "alldup",
         "content": "AllDup",
@@ -43,15 +43,6 @@
         "winget": "AutoHotkey.AutoHotkey",
         "foss": true
     },
-    "brave": {
-        "category": "TamPhan",
-        "choco": "brave",
-        "content": "Brave",
-        "description": "Brave is a privacy-focused web browser that blocks ads and trackers, offering a faster and safer browsing experience.",
-        "link": "https://www.brave.com",
-        "winget": "Brave.Brave",
-        "foss": true
-    },
     "bulkrenameutility": {
         "category": "TamPhan",
         "choco": "bulkrenameutility",
@@ -61,16 +52,7 @@
         "winget": "TGRMNSoftware.BulkRenameUtility",
         "foss": false
     },
-    "chatgptclassic": {
-        "category": "TamPhan",
-        "choco": "na",
-        "content": "ChatGPT Classic",
-        "description": "The official ChatGPT desktop classic app for Windows, distributed through the Microsoft Store.",
-        "link": "https://apps.microsoft.com/detail/9nt1r1c2hh7j",
-        "winget": "msstore:9NT1R1C2HH7J",
-        "foss": false
-    },
-        "chatgptcodex": {
+    "chatgptcodex": {
         "category": "Becamex",
         "choco": "na",
         "content": "ChatGPT Codex",
@@ -121,15 +103,6 @@
         "description": "Git is a distributed version control system widely used for tracking changes in source code during software development.",
         "link": "https://git-scm.com/",
         "winget": "Git.Git",
-        "foss": true
-    },
-    "githubdesktop": {
-        "category": "TamPhan",
-        "choco": "git;github-desktop",
-        "content": "GitHub Desktop",
-        "description": "GitHub Desktop is a visual Git client that simplifies collaboration on GitHub repositories with an easy-to-use interface.",
-        "link": "https://desktop.github.com/",
-        "winget": "GitHub.GitHubDesktop",
         "foss": true
     },
     "klite": {
@@ -328,7 +301,7 @@
         "winget": "RARLab.WinRAR",
         "foss": false
     },
-        "winmerge": {
+    "winmerge": {
         "category": "TamPhan",
         "choco": "winmerge",
         "content": "WinMerge",

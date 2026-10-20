@@ -18,14 +18,14 @@ function Invoke-WPFButton {
         Set-WinUtilTweaksProgressIndicator -Visible $false
     }
 
-    if ($sync.configs.maintenance.$Button.Type -eq 'Button') {
+    if ($sync.configs.maintenance.$Button.Action) {
         Invoke-WPFMaintenance -Action $sync.configs.maintenance.$Button.Action
         return
     }
 
-    # Check if button is defined in feature config with function or InvokeScript
-    if ($sync.configs.feature.$Button) {
-        $buttonConfig = $sync.configs.feature.$Button
+    # Maintenance tools can call a function or open a Windows panel directly.
+    $buttonConfig = $sync.configs.maintenance.$Button
+    if ($buttonConfig) {
 
         # If button has a function defined, call it
         if ($buttonConfig.function) {
@@ -47,7 +47,7 @@ function Invoke-WPFButton {
         }
     }
 
-    # Fallback to hard-coded switch for buttons not in feature.json
+    # Other application and navigation buttons use the built-in handlers.
     Switch -Wildcard ($Button) {
         "WPFTab?BT" {Invoke-WPFTab $Button}
         "WPFInstall" {Invoke-WPFInstall}
@@ -65,7 +65,7 @@ function Invoke-WPFButton {
         "WPFundoall" {Invoke-WPFundoall}
         "WPFGetInstalled" {Invoke-WPFGetInstalled -CheckBox "winget"}
         "WPFGetInstalledTweaks" {Invoke-WPFGetInstalled -CheckBox "tweaks"}
-        "WPFAppxRemoval" {Invoke-WPFTab "WPFTab5BT"}
+        "WPFAppxRemoval" {Invoke-WPFTab "WPFTab4BT"}
         "WPFBackToTweaks" {Invoke-WPFTab "WPFTab2BT"}
         "WPFInstallSelectedAppx" {Invoke-WPFAppxInstall}
         "WPFRemoveSelectedAppx" {Invoke-WPFAppxRemoval}

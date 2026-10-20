@@ -54,7 +54,7 @@ if ($Preset) {
 if ($Config) {
     Initialize-WinUtilRunspacePool | Out-Null
 
-    Invoke-WPFImpex -type "import" -Config $Config
+    Import-WinUtilConfig -Config $Config
 
     Invoke-WinUtilAutoRun
 
@@ -159,41 +159,25 @@ $sync["Form"].Add_Closing({
     [System.GC]::Collect()
 })
 
-# Attach the event handler to the Click event
-$sync.SearchBarClearButton.Add_Click({
-    $sync.SearchBar.Text = ""
-    $sync.SearchBarClearButton.Visibility = "Collapsed"
-
-    # Focus the search bar after clearing the text
-    $sync.SearchBar.Focus()
-    $sync.SearchBar.SelectAll()
-})
-
 $commonKeyEvents = {
     # Prevent shortcuts from executing if a process is already running
     if ($sync.ProcessRunning -eq $true) {
         return
     }
 
-    # Handle key presses of single keys
-    switch ($_.Key) {
-        "Escape" { $sync.SearchBar.Text = "" }
-    }
     # Handle Alt key combinations for navigation
     if ($_.KeyboardDevice.Modifiers -eq "Alt") {
         $keyEventArgs = $_
         switch ($_.SystemKey) {
             "I" { Invoke-WPFButton "WPFTab1BT"; $keyEventArgs.Handled = $true } # Navigate to Install tab and suppress Windows Warning Sound
             "T" { Invoke-WPFButton "WPFTab2BT"; $keyEventArgs.Handled = $true } # Navigate to Tweaks tab
-            "C" { Invoke-WPFButton "WPFTab3BT"; $keyEventArgs.Handled = $true } # Navigate to Config tab
-            "M" { Invoke-WPFButton "WPFTab4BT"; $keyEventArgs.Handled = $true } # Navigate to Maintenance tab
+            "M" { Invoke-WPFButton "WPFTab3BT"; $keyEventArgs.Handled = $true } # Navigate to Maintenance tab
         }
     }
     # Handle Ctrl key combinations for specific actions
     if ($_.KeyboardDevice.Modifiers -eq "Ctrl") {
         $keyEventArgs = $_
         switch ($_.Key) {
-            "F" { $sync.SearchBar.Focus() } # Focus on the search bar
             "Q" { $this.Close() } # Close the application
         }
     }
@@ -201,7 +185,6 @@ $commonKeyEvents = {
 $sync["Form"].Add_PreViewKeyDown($commonKeyEvents)
 
 $sync["Form"].Add_MouseLeftButtonDown({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
     $sync["Form"].DragMove()
 })
 
@@ -215,10 +198,6 @@ $sync["Form"].Add_MouseDoubleClick({
                 [Windows.SystemCommands]::RestoreWindow($sync.Form)
             }
     }
-})
-
-$sync["Form"].Add_Deactivated({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
 })
 
 $sync["Form"].Add_ContentRendered({
@@ -275,72 +254,6 @@ $sync["Form"].Add_ContentRendered({
     $sync["Form"].Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{ Initialize-WinUtilTaskbarOverlayAssets -IncludeLogo $false -IncludeStatusAssets $true }) | Out-Null
 })
 
-# The SearchBarTimer is used to delay the search operation until the user has stopped typing for a short period
-# This prevents the ui from stuttering when the user types quickly as it dosnt need to update the ui for every keystroke
-
-$searchBarTimer = New-Object System.Windows.Threading.DispatcherTimer
-$searchBarTimer.Interval = [TimeSpan]::FromMilliseconds(300)
-$searchBarTimer.IsEnabled = $false
-
-$searchBarTimer.add_Tick({
-    $searchBarTimer.Stop()
-    switch ($sync.currentTab) {
-        "Install" {
-            Find-AppsByNameOrDescription -SearchString $sync.SearchBar.Text -Categories $sync.SelectedAppCategories.ToArray()
-        }
-        "Tweaks" {
-            Find-TweaksByNameOrDescription -SearchString $sync.SearchBar.Text
-        }
-        "AppX" {
-            Find-TweaksByNameOrDescription -SearchString $sync.SearchBar.Text
-        }
-    }
-})
-$sync["SearchBar"].Add_TextChanged({
-    if ($sync.SearchBar.Text -ne "") {
-        $sync.SearchBarClearButton.Visibility = "Visible"
-        $sync.SearchBarIcon.Visibility = "Collapsed"
-    } else {
-        $sync.SearchBarClearButton.Visibility = "Collapsed"
-        $sync.SearchBarIcon.Visibility = "Visible"
-    }
-
-    if ($searchBarTimer.IsEnabled) {
-        $searchBarTimer.Stop()
-    }
-    $searchBarTimer.Start()
-})
-
-# Category filter chips. The chip carries its category in Tag, so one handler covers all of them.
-$sync.AppCategoryChips = @(
-    @{ Name = "WPFSearchChipAll";             Category = "" }
-    @{ Name = "WPFSearchChipBrowsers";        Category = "Browsers" }
-    @{ Name = "WPFSearchChipCommunications";  Category = "Communications" }
-    @{ Name = "WPFSearchChipDevelopment";     Category = "Development" }
-    @{ Name = "WPFSearchChipGames";           Category = "Games" }
-    @{ Name = "WPFSearchChipMicrosoftTools";  Category = "Microsoft Tools" }
-    @{ Name = "WPFSearchChipMultimediaTools"; Category = "Multimedia Tools" }
-    @{ Name = "WPFSearchChipProTools";        Category = "Pro Tools" }
-    @{ Name = "WPFSearchChipSelfhostedTools"; Category = "Selfhosted Tools" }
-    @{ Name = "WPFSearchChipUtilities";       Category = "Utilities" }
-)
-$sync.SelectedAppCategories = [System.Collections.Generic.List[string]]::new()
-
-foreach ($appCategoryChip in $sync.AppCategoryChips) {
-    $sync[$appCategoryChip.Name].Tag = $appCategoryChip.Category
-}
-
-$sync["WPFSearchChipAll"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipBrowsers"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipCommunications"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipDevelopment"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipGames"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipMicrosoftTools"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipMultimediaTools"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipProTools"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipSelfhostedTools"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-$sync["WPFSearchChipUtilities"].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-
 $sync["Form"].Add_Loaded({
     param($e)
     $null = $e
@@ -358,74 +271,6 @@ Set-WinUtilTaskbaritem -overlay "logo"
 $sync["Form"].Add_Activated({
     Set-WinUtilTaskbaritem -overlay "logo"
 })
-
-$sync["SettingsButton"].Add_Click({
-    Invoke-WPFPopup -Action "Toggle" -Popups @("Settings")
-})
-$sync["ImportMenuItem"].Add_Click({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
-    Invoke-WPFImpex -type "import"
-})
-$sync["ExportMenuItem"].Add_Click({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
-    Invoke-WPFImpex -type "export"
-})
-$sync["AboutMenuItem"].Add_Click({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
-
-    $authorInfo = @"
-Author   : <a href="https://github.com/ChrisTitusTech">@ChrisTitusTech</a>
-UI       : <a href="https://github.com/MyDrift-user">@MyDrift-user</a>, <a href="https://github.com/Marterich">@Marterich</a>
-Runspace : <a href="https://github.com/DeveloperDurp">@DeveloperDurp</a>, <a href="https://github.com/Marterich">@Marterich</a>
-GitHub   : <a href="https://github.com/ChrisTitusTech/winutil">ChrisTitusTech/winutil</a>
-Version  : <a href="https://github.com/ChrisTitusTech/winutil/releases/tag/$($sync.version)">$($sync.version)</a>
-"@
-    Show-CustomDialog -Title "About" -Message $authorInfo
-})
-$sync["DocumentationMenuItem"].Add_Click({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
-    Start-Process "https://winutil.christitus.com/"
-})
-$sync["SponsorMenuItem"].Add_Click({
-    Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
-
-    $authorInfo = @"
-<a href="https://github.com/sponsors/ChrisTitusTech">Current sponsors for ChrisTitusTech:</a>
-"@
-    $authorInfo += "`n"
-    try {
-        $sponsors = Invoke-WinUtilSponsors
-        foreach ($sponsor in $sponsors) {
-            $authorInfo += "<a href=`"https://github.com/sponsors/ChrisTitusTech`">$sponsor</a>`n"
-        }
-    } catch {
-        $authorInfo += "An error occurred while fetching or processing the sponsors: $_`n"
-    }
-    Show-CustomDialog -Title "Sponsors" -Message $authorInfo -EnableScroll $true
-})
-
-function Remove-WinUtilTempScript {
-    <#
-    .SYNOPSIS
-        Removes the temporary script downloaded by windev.ps1.
-
-    .DESCRIPTION
-        Deletes the current script only when it is a winutil-*.ps1 file in
-        the system temporary directory. This preserves normal file-backed
-        and in-memory WinUtil launches.
-    #>
-
-    $scriptPath = $PSCommandPath
-    $tempPath = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
-
-    if (
-        $scriptPath -and
-        [IO.Path]::GetDirectoryName($scriptPath) -eq $tempPath -and
-        [IO.Path]::GetFileName($scriptPath) -like 'winutil-*.ps1'
-    ) {
-        Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
-    }
-}
 
 # ──────────────────────────────────────────────────────────────────────────────
 

@@ -21,7 +21,6 @@ Describe "Initialize-WinUtilTabContent" {
             configs = @{
                 appnavigation = [pscustomobject]@{}
                 tweaks = [pscustomobject]@{}
-                feature = [pscustomobject]@{}
                 appx = [pscustomobject]@{}
                 maintenance = [pscustomobject]@{}
             }
@@ -68,11 +67,9 @@ Describe "Initialize-WinUtilTabContent" {
 
     It "initializes deferred config-backed tabs once" {
         Initialize-WinUtilTabContent -TabName "Tweaks"
-        Initialize-WinUtilTabContent -TabName "Config"
         Initialize-WinUtilTabContent -TabName "AppX"
         Initialize-WinUtilTabContent -TabName "Maintenance"
         Initialize-WinUtilTabContent -TabName "Tweaks"
-        Initialize-WinUtilTabContent -TabName "Config"
         Initialize-WinUtilTabContent -TabName "AppX"
         Initialize-WinUtilTabContent -TabName "Maintenance"
 
@@ -80,13 +77,10 @@ Describe "Initialize-WinUtilTabContent" {
             $targetGridName -eq "tweakspanel" -and $columncount -eq 2
         }
         Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
-            $targetGridName -eq "featurespanel" -and $columncount -eq 2
-        }
-        Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
             $targetGridName -eq "appxpanel" -and $columncount -eq 2
         }
         Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
-            $targetGridName -eq "maintenancepanel" -and $columncount -eq 1
+            $targetGridName -eq "maintenancepanel" -and $columncount -eq 2
         }
         Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 3 -Exactly -ParameterFilter { $Refresh }
         Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 1 -Exactly -ParameterFilter { $Refresh -and $Name -eq 'WPFToggleMaintenanceTasks' }

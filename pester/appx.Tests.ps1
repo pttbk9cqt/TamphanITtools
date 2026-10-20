@@ -222,7 +222,6 @@ Describe "Get installed AppX selection" {
         $script:sync = [Hashtable]::Synchronized(@{
             ProcessRunning = $false
             configs = @{
-                feature = @{}
                 appxHashtable = @{
                     WPFAppxExample = [pscustomobject]@{ PackageId = "Example.Package" }
                     WPFAppxMissing = [pscustomobject]@{ PackageId = "Missing.Package" }

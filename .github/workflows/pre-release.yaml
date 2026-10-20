@@ -44,7 +44,6 @@ jobs:
           add-paths: |
             docs/src/content/docs/code-reference/
             config/tweaks.json
-            config/feature.json
           labels: |
             automated
             documentation

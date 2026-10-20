@@ -7,7 +7,6 @@ BeforeAll {
     . (Join-Path $script:repoRoot "functions\private\Close-WinUtilRunspacePool.ps1")
     . (Join-Path $script:repoRoot "functions\private\Initialize-WinUtilRunspacePool.ps1")
     . (Join-Path $script:repoRoot "functions\public\Invoke-WPFRunspace.ps1")
-    . (Join-Path $script:repoRoot "functions\public\Invoke-WPFFeatureInstall.ps1")
     . (Join-Path $script:repoRoot "functions\public\Invoke-WPFAppxRemoval.ps1")
     . (Join-Path $script:repoRoot "functions\public\Invoke-WPFundoall.ps1")
 
@@ -150,7 +149,6 @@ Describe "Public runspace callers" {
     BeforeEach {
         $script:sync = [Hashtable]::Synchronized(@{
             ProcessRunning = $false
-            selectedFeatures = [System.Collections.Generic.List[string]]::new()
             selectedTweaks = [System.Collections.Generic.List[string]]::new()
             selectedAppx = [System.Collections.Generic.List[string]]::new()
             configs = @{
@@ -163,16 +161,6 @@ Describe "Public runspace callers" {
 
     AfterEach {
         Remove-Variable -Name sync -Scope Script -ErrorAction SilentlyContinue
-    }
-
-    It "queues selected feature installation without executing the runspace body" {
-        $script:sync.selectedFeatures.Add("WPFFeaturesSandbox")
-
-        Invoke-WPFFeatureInstall
-
-        Should -Invoke -CommandName Invoke-WPFRunspace -Times 1 -Exactly -ParameterFilter {
-            $ScriptBlock -is [scriptblock] -and $null -eq $ArgumentList -and $null -eq $ParameterList
-        }
     }
 
     It "passes selected tweaks as the runspace argument list for undo all" {

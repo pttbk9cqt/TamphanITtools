@@ -1,7 +1,7 @@
 function Get-WinUtilEntryToolTip {
     <#
         .SYNOPSIS
-            Builds the tooltip string for an app/tweak/feature entry: its description plus its preset JSON key
+            Builds the tooltip string for an app/tweak/AppX entry: its description plus its preset JSON key
 
         .PARAMETER Description
             The entry's description from the config JSON. May be null or empty.

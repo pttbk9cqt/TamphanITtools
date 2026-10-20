@@ -46,7 +46,7 @@ export default defineConfig({
 						{ label: 'Getting Started', slug: 'guides/getting-started' },
 						{ label: 'Applications', slug: 'guides/application' },
 						{ label: 'Tweaks', slug: 'guides/tweaks' },
-						{ label: 'Features', slug: 'guides/features' },
+						{ label: 'Windows tools', slug: 'guides/features' },
 						{ label: 'Updates', slug: 'guides/updates' },
 						{ label: 'Maintenance', slug: 'guides/maintenance' },
 						{ label: 'Automation', slug: 'guides/automation' },
@@ -58,7 +58,7 @@ export default defineConfig({
 						{ label: 'Architecture & Design', slug: 'code-reference/architecture' },
 						{ label: 'Issue Triage Commands', slug: 'code-reference/issue-triage' },
 						{ label: 'Tweaks Reference', items: [{ autogenerate: { directory: 'code-reference/tweaks' } }] },
-						{ label: 'Features Reference', items: [{ autogenerate: { directory: 'code-reference/features' } }] },
+						{ label: 'Maintenance Tools Reference', items: [{ autogenerate: { directory: 'code-reference/features' } }] },
 					],
 				},
 				{

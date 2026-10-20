@@ -544,26 +544,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SearchBarClearButtonStyle" TargetType="Button">
-            <Setter Property="FontFamily" Value="{DynamicResource FontFamily}"/>
-            <Setter Property="FontSize" Value="{DynamicResource SearchBarClearButtonFontSize}"/>
-            <Setter Property="Content" Value="X"/>
-            <Setter Property="Height" Value="{DynamicResource SearchBarClearButtonFontSize}"/>
-            <Setter Property="Width" Value="{DynamicResource SearchBarClearButtonFontSize}"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{DynamicResource MainForegroundColor}"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="Red"/>
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="BorderThickness" Value="10"/>
-                    <Setter Property="Cursor" Value="Hand"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
         <!-- Checkbox template -->
         <Style TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource MainForegroundColor}"/>
@@ -999,42 +979,6 @@
         </Style>
         <!-- Category filter chips. A toggle rather than a button, so the active filter is visible
              on the chip itself instead of only in the results below. -->
-        <Style x:Key="FilterChipToggleStyle" TargetType="ToggleButton">
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="12,4,12,4"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="{DynamicResource ButtonFontSize}"/>
-            <Setter Property="FontFamily" Value="{DynamicResource ButtonFontFamily}"/>
-            <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundColor}"/>
-            <Setter Property="Background" Value="{DynamicResource ButtonBackgroundColor}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border Name="ChipBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{DynamicResource BorderColor}"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource ButtonCornerRadius}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
-                                              TextBlock.Foreground="{TemplateBinding Foreground}"
-                                              TextBlock.FontSize="{TemplateBinding FontSize}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ChipBorder" Property="Background" Value="{DynamicResource ButtonBackgroundMouseoverColor}"/>
-                            </Trigger>
-                            <!-- Only colours change on check. Anything affecting text width, bold for
-                                 instance, would resize the chip and shift every chip after it. -->
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="ChipBorder" Property="Background" Value="{DynamicResource ButtonBackgroundSelectedColor}"/>
-                                <Setter TargetName="ChipBorder" Property="BorderBrush" Value="{DynamicResource LabelboxForegroundColor}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
     <Grid Background="{DynamicResource MainBackgroundColor}" ShowGridLines="False" Name="WPFMainGrid" Width="Auto" Height="Auto" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
@@ -1054,7 +998,7 @@
         <Grid Grid.Row="1" Background="{DynamicResource MainBackgroundColor}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/> <!-- Navigation buttons -->
-                <ColumnDefinition Width="*"/> <!-- Search bar and buttons -->
+                <ColumnDefinition Width="*"/> <!-- Window action buttons -->
             </Grid.ColumnDefinitions>
 
             <!-- Navigation Buttons Panel -->
@@ -1077,99 +1021,17 @@
                         </TextBlock>
                     </ToggleButton.Content>
                 </ToggleButton>
-                <ToggleButton Style="{StaticResource TabToggleButton}" Margin="0,0,5,0" Height="{DynamicResource TabButtonHeight}" Width="{DynamicResource TabButtonWidth}"
-                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab3BT">
-                    <ToggleButton.Content>
-                        <TextBlock FontSize="{DynamicResource TabButtonFontSize}" Background="Transparent" Foreground="{DynamicResource ButtonConfigForegroundColor}">
-                            <Underline>C</Underline>onfig
-                        </TextBlock>
-                    </ToggleButton.Content>
-                </ToggleButton>
                 <ToggleButton Style="{StaticResource TabToggleButton}" Margin="0,0,5,0" Height="{DynamicResource TabButtonHeight}" Width="125"
-                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab4BT">
+                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab3BT">
                     <TextBlock FontSize="{DynamicResource TabButtonFontSize}" Background="Transparent" Foreground="{DynamicResource ButtonConfigForegroundColor}">
                         <Underline>M</Underline>aintenance
                     </TextBlock>
                 </ToggleButton>
             </StackPanel>
 
-            <!-- Search Bar and Action Buttons -->
+            <!-- Window action buttons -->
             <Grid Name="GridBesideNavDockPanel" Grid.Column="1" Background="{DynamicResource MainBackgroundColor}" ShowGridLines="False" Height="Auto">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/> <!-- Search bar area - priority space -->
-                    <ColumnDefinition Width="Auto"/><!-- Buttons area -->
-                </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0" Margin="5,0,10,0" MinWidth="120" Height="{DynamicResource SearchBarHeight}" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                    <Grid>
-                        <TextBox
-                            Height="{DynamicResource SearchBarHeight}"
-                            FontSize="{DynamicResource SearchBarTextBoxFontSize}"
-                            VerticalAlignment="Center" HorizontalAlignment="Stretch"
-                            BorderThickness="1"
-                            Name="SearchBar"
-                            Foreground="{DynamicResource MainForegroundColor}" Background="{DynamicResource MainBackgroundColor}"
-                            Padding="3,3,30,0"
-                            ToolTip="Press Ctrl-F and type app name to filter application list below. Press Esc to reset the filter"
-                            AutomationProperties.Name="Search">
-                        </TextBox>
-                        <TextBlock
-                            Name="SearchBarIcon"
-                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                            FontFamily="Segoe MDL2 Assets"
-                            Foreground="{DynamicResource ButtonBackgroundSelectedColor}"
-                            FontSize="{DynamicResource IconFontSize}"
-                            Margin="0,0,8,0" Width="Auto" Height="Auto">&#xE721;
-                        </TextBlock>
-                    </Grid>
-                </Border>
-                <Button Grid.Column="0"
-                    VerticalAlignment="Center" HorizontalAlignment="Right"
-                    Name="SearchBarClearButton"
-                    Style="{StaticResource SearchBarClearButtonStyle}"
-                    AutomationProperties.Name="Clear Search"
-                    Margin="0,0,20,0" Visibility="Collapsed">
-                </Button>
-
-                <!-- Buttons Container -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5,5,5,5">
-                    <Button Name="SettingsButton"
-                        Style="{StaticResource HoverButtonStyle}"
-                        BorderBrush="Transparent"
-                    Background="{DynamicResource MainBackgroundColor}"
-                    Foreground="{DynamicResource MainForegroundColor}"
-                    FontSize="{DynamicResource SettingsIconFontSize}"
-                    Width="{DynamicResource IconButtonSize}" Height="{DynamicResource IconButtonSize}"
-                    HorizontalAlignment="Right" VerticalAlignment="Center"
-                    Margin="0,0,2,0"
-                    FontFamily="Segoe MDL2 Assets"
-                    ToolTip="Settings"
-                    AutomationProperties.Name="Settings"
-                    Content="&#xE713;"/>
-                    <Popup Name="SettingsPopup"
-                    IsOpen="False"
-                    PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom"
-                    HorizontalAlignment="Right" VerticalAlignment="Top">
-                    <Border Background="{DynamicResource MainBackgroundColor}" BorderBrush="{DynamicResource MainForegroundColor}" BorderThickness="1" CornerRadius="0" Margin="0">
-                        <StackPanel Background="{DynamicResource MainBackgroundColor}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                            <MenuItem FontSize="{DynamicResource ButtonFontSize}" Header="Import" Name="ImportMenuItem" Foreground="{DynamicResource MainForegroundColor}">
-                                <MenuItem.ToolTip>
-                                    <ToolTip Content="Import Configuration from exported file."/>
-                                </MenuItem.ToolTip>
-                            </MenuItem>
-                            <MenuItem FontSize="{DynamicResource ButtonFontSize}" Header="Export" Name="ExportMenuItem" Foreground="{DynamicResource MainForegroundColor}">
-                                <MenuItem.ToolTip>
-                                    <ToolTip Content="Export Selected Elements and copy execution command to clipboard."/>
-                                </MenuItem.ToolTip>
-                            </MenuItem>
-                            <Separator/>
-                            <MenuItem FontSize="{DynamicResource ButtonFontSize}" Header="About" Name="AboutMenuItem" Foreground="{DynamicResource MainForegroundColor}"/>
-                            <MenuItem FontSize="{DynamicResource ButtonFontSize}" Header="Documentation" Name="DocumentationMenuItem" Foreground="{DynamicResource MainForegroundColor}"/>
-                            <MenuItem FontSize="{DynamicResource ButtonFontSize}" Header="Sponsors" Name="SponsorMenuItem" Foreground="{DynamicResource MainForegroundColor}"/>
-                        </StackPanel>
-                    </Border>
-                </Popup>
-
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5,5,5,5">
                     <Button
                         Content="&#xE921;"
                         Style="{StaticResource HoverButtonStyle}"
@@ -1234,34 +1096,7 @@
         <TabControl Name="WPFTabNav" Background="Transparent" Width="Auto" Height="Auto" BorderBrush="Transparent" BorderThickness="0" Grid.Row="2" Grid.Column="0" Padding="-1">
             <TabItem Header="Install" Visibility="Collapsed" Name="WPFTab1">
                 <Grid Background="Transparent" >
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Quick Category Search Chips -->
-                    <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="5,5,5,5" Name="WPFSearchChips" Visibility="Collapsed">
-                        <TextBlock Text="Filters"
-                                   FontSize="{DynamicResource HeaderFontSize}"
-                                   FontFamily="{DynamicResource HeaderFontFamily}"
-                                   Foreground="{DynamicResource LabelboxForegroundColor}"
-                                   Background="Transparent"
-                                   VerticalAlignment="Center"
-                                   Margin="10,0,10,0"
-                                   ToolTip="Filter by category. Ctrl click to select more than one."/>
-                        <ToggleButton Name="WPFSearchChipAll"             Content="All"               Style="{StaticResource FilterChipToggleStyle}" IsChecked="True"/>
-                        <ToggleButton Name="WPFSearchChipBrowsers"        Content="Browsers"          Style="{StaticResource FilterChipToggleStyle}"/>
-                        <ToggleButton Name="WPFSearchChipCommunications"  Content="Communications"    Style="{StaticResource FilterChipToggleStyle}"/>
-                        <ToggleButton Name="WPFSearchChipDevelopment"     Content="Development"       Style="{StaticResource FilterChipToggleStyle}"/>
-                        <ToggleButton Name="WPFSearchChipGames"           Content="Games"             Style="{StaticResource FilterChipToggleStyle}"/>
-                        <ToggleButton Name="WPFSearchChipMicrosoftTools"  Content="Microsoft Tools"   Style="{StaticResource FilterChipToggleStyle}"/>
-                        <ToggleButton Name="WPFSearchChipMultimediaTools" Content="Multimedia Tools"  Style="{StaticResource FilterChipToggleStyle}"/>
-                        <ToggleButton Name="WPFSearchChipProTools"        Content="Pro Tools"         Style="{StaticResource FilterChipToggleStyle}"/>
-                        <ToggleButton Name="WPFSearchChipSelfhostedTools" Content="Selfhosted Tools"  Style="{StaticResource FilterChipToggleStyle}"/>
-                        <ToggleButton Name="WPFSearchChipUtilities"       Content="Utilities"         Style="{StaticResource FilterChipToggleStyle}"/>
-                    </WrapPanel>
-
-                    <Grid Grid.Row="1" Margin="{DynamicResource TabContentMargin}">
+                    <Grid Margin="{DynamicResource TabContentMargin}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -1325,23 +1160,17 @@
                     </Border>
                 </Grid>
             </TabItem>
-            <TabItem Header="Config" Visibility="Collapsed" Name="WPFTab3">
+            <TabItem Header="Maintenance" Visibility="Collapsed" Name="WPFTab3">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="{DynamicResource TabContentMargin}">
-                    <Grid Name="featurespanel" Grid.Row="1" Background="Transparent">
-                    </Grid>
-                </ScrollViewer>
-            </TabItem>
-            <TabItem Header="Maintenance" Visibility="Collapsed" Name="WPFTab4">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="{DynamicResource TabContentMargin}">
                     <StackPanel>
                         <TextBlock Text="Computer Maintenance" FontSize="{DynamicResource HeaderFontSize}" FontWeight="Bold" Margin="15,10,15,5"/>
                         <TextBlock Text="Use the switches to create or remove schedules; export reports with the button. Original files stay in C:\IT-MAINTENANCE. Run as administrator; no copy/paste or PowerShell ISE is needed."
                             TextWrapping="Wrap" Margin="15,0,15,10"/>
-                        <Grid Name="maintenancepanel" Background="Transparent" Width="440" HorizontalAlignment="Left"/>
+                        <Grid Name="maintenancepanel" Background="Transparent" Width="880" HorizontalAlignment="Left"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
-            <TabItem Header="AppX" Visibility="Collapsed" Name="WPFTab5">
+            <TabItem Header="AppX" Visibility="Collapsed" Name="WPFTab4">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />

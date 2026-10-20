@@ -21,11 +21,8 @@ function Initialize-WinUtilTabContent {
         "Tweaks" {
             Invoke-WPFUIElements -configVariable $sync.configs.tweaks -targetGridName "tweakspanel" -columncount 2
         }
-        "Config" {
-            Invoke-WPFUIElements -configVariable $sync.configs.feature -targetGridName "featurespanel" -columncount 2
-        }
         "Maintenance" {
-            Invoke-WPFUIElements -configVariable $sync.configs.maintenance -targetGridName "maintenancepanel" -columncount 1
+            Invoke-WPFUIElements -configVariable $sync.configs.maintenance -targetGridName "maintenancepanel" -columncount 2
             foreach ($toggleName in @('WPFToggleMaintenanceTasks','WPFToggleMaintenanceMonitor','WPFToggleWindowsUpdate')) {
                 Invoke-WPFMaintenanceToggle -Name $toggleName -Refresh
             }

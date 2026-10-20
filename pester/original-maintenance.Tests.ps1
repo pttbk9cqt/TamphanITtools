@@ -53,16 +53,17 @@ Describe 'Original maintenance files' {
             $payloads.($file.Name) | Should -BeExactly ([Convert]::ToBase64String([IO.File]::ReadAllBytes($file.FullName)))
         }
         $config = Get-Content (Join-Path $script:repoRoot 'config/maintenance.json') -Raw | ConvertFrom-Json
-        $controls = @($config.PSObject.Properties | Sort-Object { $_.Value.Order })
-        $controls.Count | Should -Be 5
+        $controls = @($config.PSObject.Properties | Where-Object { $_.Value.Category -eq 'IT-MAINTENANCE' } | Sort-Object { $_.Value.Order })
+        $controls.Count | Should -Be 6
         @($controls | ForEach-Object { $_.Name }) | Should -Be @(
             'WPFToggleMaintenanceTasks',
             'WPFToggleMaintenanceMonitor',
             'WPFMaintenanceExportInventory',
             'WPFToggleWindowsUpdate',
-            'WPFMaintenanceTaskScheduler'
+            'WPFMaintenanceTaskScheduler',
+            'WPFFixesWinget'
         )
-        @($controls | ForEach-Object { $_.Value.Order }) | Should -Be @(1,2,3,4,5)
+        @($controls | ForEach-Object { $_.Value.Order }) | Should -Be @(1,2,3,4,5,6)
     }
 
     It 'runs a text workflow without requiring a console pause: <Action>' -TestCases @(

@@ -8,15 +8,7 @@ function Invoke-WinUtilInstallAppRenderBatch {
         $sync.$appKey = Initialize-InstallAppEntry -TargetElement $CategoryBatch.TargetElement -AppKey $appKey
     }
 
-    # Entries render in batches, so a filter that is already active has to be applied to each new
-    # batch. Categories count as an active filter just like search text does.
-    if ($sync.currentTab -eq "Install" -and $sync.SearchBar) {
-        $selectedCategories = if ($sync.SelectedAppCategories) { $sync.SelectedAppCategories.ToArray() } else { @() }
 
-        if (-not [string]::IsNullOrWhiteSpace($sync.SearchBar.Text) -or $selectedCategories.Count -gt 0) {
-            Find-AppsByNameOrDescription -SearchString $sync.SearchBar.Text -Categories $selectedCategories
-        }
-    }
 }
 
 function Complete-WinUtilInstallAppRendering {

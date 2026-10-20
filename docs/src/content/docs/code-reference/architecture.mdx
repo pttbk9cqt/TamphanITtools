@@ -57,7 +57,7 @@ winutil/
 ├── config/                    # JSON configuration files
 │   ├── applications.json      # Application definitions
 │   ├── tweaks.json           # Tweak definitions
-│   ├── feature.json          # Windows feature definitions
+│   ├── maintenance.json      # Maintenance actions and Windows panels
 │   └── preset.json           # Preset configurations
 ├── xaml/
 │   └── inputXML.xaml         # GUI layout definition
@@ -109,12 +109,12 @@ winutil/
 - `Invoke-WinUtilCurrentSystem.ps1`: Gets system information
 
 #### 5. config/*.json
-**Purpose**: Define available applications, tweaks, and features declaratively.
+**Purpose**: Define available applications, tweaks, and maintenance actions declaratively.
 
 **Files**:
 - `applications.json`: Application definitions with WinGet/Choco IDs
 - `tweaks.json`: Registry tweaks and their undo actions
-- `feature.json`: Windows features that can be enabled/disabled
+- `maintenance.json`: Task switches, report export, Windows Update, WinGet repair, and Windows panel shortcuts
 - `preset.json`: Predefined tweak combinations
 - `dns.json`: DNS provider configurations
 
@@ -191,11 +191,13 @@ Update UI
 
 ## Maintenance workflows
 
-Windows Update uses one CheckBox in Maintenance with the same switch style as Tweaks. `Invoke-WPFWindowsUpdate` handles clicks: on calls `Invoke-WPFUpdatesdefault`, off calls `Invoke-WPFUpdatesdisable`. Lazy initialization calls it with `-Refresh`, which only reads policy/service state through `Get-WinUtilWindowsUpdateStatus`. Programmatic state changes never invoke either update workflow. The switch is excluded from tweak selections and returns to the actual state after cancellation or failure. There is no separate Updates tab or Recommended update profile. Tab navigation uses sequential control numbers, with Maintenance at `WPFTab4` and AppX at `WPFTab5`.
+Windows Update uses one CheckBox in Maintenance with the same switch style as Tweaks. `Invoke-WPFWindowsUpdate` handles clicks: on calls `Invoke-WPFUpdatesdefault`, off calls `Invoke-WPFUpdatesdisable`. Lazy initialization calls it with `-Refresh`, which only reads policy/service state through `Get-WinUtilWindowsUpdateStatus`. Programmatic state changes never invoke either update workflow. The switch is excluded from tweak selections and returns to the actual state after cancellation or failure. There is no separate Updates tab or Recommended update profile. Tab navigation uses sequential control numbers, with Maintenance at `WPFTab3` and AppX at `WPFTab4`.
 
-The Maintenance tab renders one compact, ordered panel from `config/maintenance.json`. It contains stateful switches for the daily shutdown/cleanup tasks, C:/D: monitoring, and Windows Update, plus one immediate software/DxDiag export button. `Invoke-WPFMaintenanceToggle` reads actual Scheduled Task state when the tab opens and maps each user click to its install or removal action. `Invoke-WPFMaintenance` confirms the effect and queues `Invoke-WinUtilMaintenance` through the existing runspace pool; completion refreshes the switch from system state. Turning a maintenance switch off removes only its task definitions and retains installed files and reports.
+The Settings menu, search box, category filter chips, debounce timer, and filter helpers have been removed. Command-line configuration import uses `Import-WinUtilConfig`; there is no GUI configuration export. Legacy Windows Panels centers its heading and buttons inside the right-hand panel.
 
-The compiler embeds `maintenance/*.ps1` as UTF-8/base64 into `$sync.configs.maintenanceScripts` and the four files in `maintenance/original/` as raw-byte/base64 payloads into `$sync.configs.maintenanceOriginalFiles`. `Install-WinUtilOriginalMaintenanceFiles` backs up replaced files and secures `C:\IT-MAINTENANCE`. The standalone compiled script has no dependency on the ComputerMaintenance checkout or a network share.
+The Maintenance tab renders two columns from `config/maintenance.json`: the compact, ordered IT-MAINTENANCE panel and Legacy Windows Panels. WinGet reinstall uses the existing function handler; legacy shortcuts use their configured `InvokeScript` actions through `Invoke-WPFButton`. Config and its feature installer/selection state have been removed. Strict imports reject retired feature keys; legacy imports report them as skipped. It contains stateful switches for the daily shutdown/cleanup tasks, C:/D: monitoring, and Windows Update, plus one immediate software/DxDiag export button. `Invoke-WPFMaintenanceToggle` reads actual Scheduled Task state when the tab opens and maps each user click to its install or removal action. `Invoke-WPFMaintenance` confirms the effect and queues `Invoke-WinUtilMaintenance` through the existing runspace pool; completion refreshes the switch from system state. Turning a maintenance switch off removes only its task definitions and retains installed files and reports.
+
+The compiler embeds the `maintenance/RunOriginal.ps1` adapter as UTF-8/base64 into `$sync.configs.maintenanceScripts` and the four files in `maintenance/original/` as raw-byte/base64 payloads into `$sync.configs.maintenanceOriginalFiles`. `Install-WinUtilOriginalMaintenanceFiles` backs up replaced files and secures `C:\IT-MAINTENANCE`. The standalone compiled script has no dependency on the ComputerMaintenance checkout or a network share.
 
 Daily tasks retain the original actions, times, and current-account context; `/F` permits an explicit reinstall. `RunOriginal.ps1` runs the original inventory or monitoring installer in a separate Windows PowerShell process, replacing only the closing `Read-Host`/`Clear-Host` console interaction. The original cleaner and D: hiding/restoration behavior is preserved. Success requires task verification or fresh CSV/TXT reports with a stable DxDiag output. UI actions use the WinUtil session log, and the original monitor retains `DiskMonitor.log`. Earlier account/network setup helpers are no longer exposed by the Maintenance UI.
 
@@ -345,7 +347,7 @@ At startup, Winutil loads all configurations:
 $sync.configs = @{}
 $sync.configs.applications = Get-Content "config/applications.json" | ConvertFrom-Json
 $sync.configs.tweaks = Get-Content "config/tweaks.json" | ConvertFrom-Json
-$sync.configs.features = Get-Content "config/feature.json" | ConvertFrom-Json
+$sync.configs.maintenance = Get-Content "config/maintenance.json" | ConvertFrom-Json
 ```
 
 **Sync Hash**: `$sync` hashtable shares state across runspaces.
@@ -510,7 +512,7 @@ Outputs `winutil.ps1` in the root directory.
 
 **Roadmap Considerations**:
 - Plugin system for community extensions
-- Config import/export
+- Command-line config import
 - Cloud sync for configurations
 - Enhanced logging dashboard
 - Modular compilation (choose features)

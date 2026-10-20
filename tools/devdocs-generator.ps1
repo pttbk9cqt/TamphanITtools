@@ -1,6 +1,6 @@
 <#
     .DESCRIPTION
-    Generates Astro/Starlight markdown docs from config/tweaks.json and config/feature.json.
+    Generates Astro/Starlight markdown docs from config/tweaks.json and config/maintenance.json.
     Run by the GitHub Actions docs workflow before the Astro build.
 #>
 
@@ -254,9 +254,9 @@ $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $repoRoot  = Resolve-Path "$scriptDir/.."
 
 $tweaksJsonPath      = "$repoRoot/config/tweaks.json"
-$featuresJsonPath    = "$repoRoot/config/feature.json"
+$maintenanceJsonPath = "$repoRoot/config/maintenance.json"
 $tweaksOutputDir     = "$repoRoot/docs/src/content/docs/code-reference/tweaks"
-$featuresOutputDir   = "$repoRoot/docs/src/content/docs/code-reference/features"
+$maintenanceOutputDir = "$repoRoot/docs/src/content/docs/code-reference/features"
 $publicFunctionsDir  = "$repoRoot/functions/public"
 $privateFunctionsDir = "$repoRoot/functions/private"
 
@@ -268,24 +268,12 @@ $documentedCategories = @(
     "Essential Tweaks",
     "z__Advanced Tweaks - CAUTION",
     "Customize Preferences",
-    "Performance Plans",
-    "Features",
-    "Fixes",
-    "Legacy Windows Panels",
-    "Powershell Profile Powershell 7+ Only",
-    "Remote Access"
-)
-
-# Categories where Button entries embed a PS function instead of raw JSON
-$functionEmbedCategories = @(
-    "Fixes",
-    "Powershell Profile Powershell 7+ Only",
-    "Remote Access"
+    "Performance Plans"
 )
 
 Update-Progress "Loading JSON files" 10
 $tweaks   = Get-Content -Path $tweaksJsonPath   -Raw | ConvertFrom-Json
-$features = Get-Content -Path $featuresJsonPath -Raw | ConvertFrom-Json
+$maintenance = Get-Content -Path $maintenanceJsonPath -Raw | ConvertFrom-Json
 
 Update-Progress "Loading function files" 20
 $functionFiles = @{}
@@ -301,18 +289,17 @@ $buttonFunctionMap = Get-ButtonFunctionMapping -ButtonFilePath "$publicFunctions
 
 Update-Progress "Updating documentation links in JSON" 40
 Add-LinkAttributeToJson -JsonFilePath $tweaksJsonPath   -UrlPrefix "$baseUrl/code-reference/tweaks"   -ItemNameToCut $itemnametocut
-Add-LinkAttributeToJson -JsonFilePath $featuresJsonPath -UrlPrefix "$baseUrl/code-reference/features" -ItemNameToCut $itemnametocut
 
 # Reload lines after link update so line numbers in docs are accurate
 $tweaksLines   = Get-Content -Path $tweaksJsonPath
-$featuresLines = Get-Content -Path $featuresJsonPath
+$maintenanceLines = Get-Content -Path $maintenanceJsonPath
 
 # ==============================================================================
 # Clean up old generated .mdx files
 # ==============================================================================
 
 Update-Progress "Cleaning up old generated docs" 45
-foreach ($dir in @($tweaksOutputDir, $featuresOutputDir)) {
+foreach ($dir in @($tweaksOutputDir, $maintenanceOutputDir)) {
     if (-Not (Test-Path -Path $dir)) { continue }
     Get-ChildItem -Path $dir -Recurse -Filter *.mdx | Where-Object {
         # No category index.mdx pages exist yet. If one is added later as a
@@ -381,26 +368,27 @@ foreach ($itemName in $tweakNames) {
 }
 
 # ==============================================================================
-# Generate Feature Documentation
+# Generate Maintenance Tool Documentation
 # ==============================================================================
 
-Update-Progress "Generating feature documentation" 70
+Update-Progress "Generating maintenance tool documentation" 70
 
-$featureNames  = $features.PSObject.Properties.Name
-$totalFeatures = $featureNames.Count
-$featureCount  = 0
+$toolNames = $maintenance.PSObject.Properties.Name
+$totalTools = $toolNames.Count
+$toolCount = 0
 
-foreach ($itemName in $featureNames) {
-    $item = $features.$itemName
-    $featureCount++
+foreach ($itemName in $toolNames) {
+    $item = $maintenance.$itemName
+    $toolCount++
 
-    if ($item.category -notin $documentedCategories) { continue }
-    if ($itemName -eq "WPFFeatureInstall") { continue }
+    # Only the retained WinGet and legacy panel buttons have reference links.
+    if (-not $item.link -or $item.Type -ne 'Button') { continue }
 
-    $category    = $item.category -replace '[^a-zA-Z0-9]', '-'
-    $displayName = $itemName -replace $itemnametocut, ''
-    $categoryDir = "$featuresOutputDir/$category"
-    $filename    = "$categoryDir/$displayName.mdx"
+    # Preserve the existing reference URLs after moving these tools to Maintenance.
+    $relativePath = ([uri]$item.link).AbsolutePath -replace '^/code-reference/features/', ''
+    if ($relativePath -notmatch '^[a-z0-9-]+/[a-z0-9-]+$') { throw "Invalid maintenance reference path: $relativePath" }
+    $filename = "$maintenanceOutputDir/$relativePath.mdx"
+    $categoryDir = Split-Path -Parent $filename
 
     if (-Not (Test-Path -Path $categoryDir)) { New-Item -ItemType Directory -Path $categoryDir | Out-Null }
 
@@ -408,9 +396,9 @@ foreach ($itemName in $featureNames) {
     $description = if ($item.Description) { $item.Description -replace '"', '\"' } else { '' }
     $content     = "---`r`ntitle: `"$title`"`r`ndescription: `"$description`"`r`neditUrl: false`r`n---`r`n`r`n"
 
-    if ($item.category -in $functionEmbedCategories) {
-        $funcName = if ($item.function) { $item.function } else { $buttonFunctionMap[$itemName] }
-        if ($funcName -and $functionFiles.ContainsKey($funcName)) {
+    if ($item.function) {
+        $funcName = $item.function
+        if ($functionFiles.ContainsKey($funcName)) {
             $func     = $functionFiles[$funcName]
             $content += Get-GeneratedFromNote -SourceRelativePath $func.RelativePath
             $content += "``````powershell title=`"$($func.RelativePath)`"`r`n"
@@ -418,10 +406,10 @@ foreach ($itemName in $featureNames) {
             $content += "```````r`n"
         }
     } else {
-        $jsonBlock = Get-RawJsonBlock -ItemName $itemName -JsonLines $featuresLines
+        $jsonBlock = Get-RawJsonBlock -ItemName $itemName -JsonLines $maintenanceLines
         if ($jsonBlock) {
-            $content += Get-GeneratedFromNote -SourceRelativePath "config/feature.json"
-            $content += "``````json title=`"config/feature.json`"`r`n"
+            $content += Get-GeneratedFromNote -SourceRelativePath "config/maintenance.json"
+            $content += "``````json title=`"config/maintenance.json`"`r`n"
             $content += $jsonBlock.RawText + "`r`n"
             $content += "```````r`n"
         }
@@ -429,8 +417,8 @@ foreach ($itemName in $featureNames) {
 
     Set-Content -Path $filename -Value $content -Encoding utf8 -NoNewline
 
-    $percent = [Math]::Min(90, 70 + [int](($featureCount / $totalFeatures) * 20))
-    Update-Progress "Generating feature documentation ($featureCount/$totalFeatures)" $percent
+    $percent = [Math]::Min(90, 70 + [int](($toolCount / $totalTools) * 20))
+    Update-Progress "Generating maintenance tool documentation ($toolCount/$totalTools)" $percent
 }
 
 Update-Progress "Process Completed" 100
