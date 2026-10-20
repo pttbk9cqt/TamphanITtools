@@ -10,8 +10,6 @@ function Invoke-WPFUIElements {
         The number of columns to be used in the Grid. If not provided, a default value is used based on the panel.
     .EXAMPLE
         Invoke-WPFUIElements -configVariable $sync.configs.applications -targetGridName "install" -columncount 5
-    .NOTES
-        Future me/contributor: If possible, please wrap this into a runspace to make it load all panels at the same time.
     #>
 
     param(
@@ -30,7 +28,6 @@ function Invoke-WPFUIElements {
     $borderstyle = $window.FindResource("BorderStyle")
     $HoverTextBlockStyle = $window.FindResource("HoverTextBlockStyle")
     $ColorfulToggleSwitchStyle = $window.FindResource("ColorfulToggleSwitchStyle")
-    $ToggleButtonStyle = $window.FindResource("ToggleButtonStyle")
 
     if (!$borderstyle -or !$HoverTextBlockStyle -or !$ColorfulToggleSwitchStyle) {
         throw "Failed to retrieve Styles using 'FindResource' from main window element."
@@ -99,7 +96,6 @@ function Invoke-WPFUIElements {
     $panelcount = 0
 
     # Iterate through 'organizedData' by panel, category, and application
-    $count = 0
     foreach ($panelKey in ($organizedData.Keys | Sort-Object)) {
         # Create a Border for each column
         $border = New-Object Windows.Controls.Border
@@ -149,7 +145,6 @@ function Invoke-WPFUIElements {
 
         # Now proceed with adding category labels and entries to $stackPanelContainer
         foreach ($category in ($organizedData[$panelKey].Keys | Sort-Object)) {
-            $count++
 
             $label = New-Object Windows.Controls.Label
             $categoryCleanName = $category -replace ".*__", ""
@@ -166,19 +161,17 @@ function Invoke-WPFUIElements {
             $stackPanelContainer.Children.Add($label) | Out-Null
             $sync[$category] = $label
 
-            # Sort entries by type (checkboxes first, then buttons, then comboboxes, notes last) and then alphabetically by Content
+            # Sort entries by type (checkboxes first, then buttons, then comboboxes) and then alphabetically by Content
             $entries = $organizedData[$panelKey][$category] | Sort-Object @{Expression = {
                 if ($null -ne $_.Order) { [int]$_.Order } else { [int]::MaxValue }
             }}, @{Expression = {
                 switch ($_.Type) {
                     'Button' { 1 }
                     'Combobox' { 2 }
-                    'Note' { 3 }
                     default { 0 }
                 }
             }}, Content
             foreach ($entryInfo in $entries) {
-                $count++
                 # Create the UI elements based on the entry type
                 switch ($entryInfo.Type) {
                     "MaintenanceToggle" {
@@ -256,45 +249,6 @@ function Invoke-WPFUIElements {
                                 Invoke-WinUtiltweaks $Sender.name -undo $true
                             }
                         })
-                    }
-
-                    "ToggleButton" {
-                        $toggleButton = New-Object Windows.Controls.Primitives.ToggleButton
-                        $toggleButton.Name = $entryInfo.Name
-                        $toggleButton.Content = $entryInfo.Content[1]
-                        $toggleButton.ToolTip = Get-WinUtilEntryToolTip -Description $entryInfo.Description -Key $entryInfo.Name
-                        $toggleButton.HorizontalAlignment = "Left"
-                        $toggleButton.Style = $ToggleButtonStyle
-                        [System.Windows.Automation.AutomationProperties]::SetName($toggleButton, $entryInfo.Content[0])
-
-                        $toggleButton.Tag = @{
-                            contentOn = if ($entryInfo.Content.Count -ge 1) { $entryInfo.Content[0] } else { "" }
-                            contentOff = if ($entryInfo.Content.Count -ge 2) { $entryInfo.Content[1] } else { $contentOn }
-                        }
-
-                        $stackPanelContainer.Children.Add($toggleButton) | Out-Null
-
-                        $sync[$entryInfo.Name] = $toggleButton
-
-                        $sync[$entryInfo.Name].Add_Checked({
-                            $this.Content = $this.Tag.contentOn
-                        })
-
-                        $sync[$entryInfo.Name].Add_Unchecked({
-                            $this.Content = $this.Tag.contentOff
-                        })
-
-                        if ($null -eq $sync.Buttons) {
-                            $sync.Buttons = [System.Collections.Generic.List[PSObject]]::new()
-                        }
-
-                        if ($sync.Buttons -notcontains $toggleButton.Name) {
-                            $toggleButton.Add_Click({
-                                [System.Object]$Sender = $args[0]
-                                Invoke-WPFButton $Sender.name
-                            })
-                            $sync.Buttons.Add($toggleButton.Name) | Out-Null
-                        }
                     }
 
                     "Combobox" {

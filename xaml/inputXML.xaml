@@ -448,101 +448,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
-            <Setter Property="Margin" Value="{DynamicResource ButtonMargin}"/>
-            <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundColor}"/>
-            <Setter Property="Background" Value="{DynamicResource ButtonBackgroundColor}"/>
-            <Setter Property="Height" Value="{DynamicResource ButtonHeight}"/>
-            <Setter Property="Width" Value="{DynamicResource ButtonWidth}"/>
-            <Setter Property="FontSize" Value="{DynamicResource ButtonFontSize}"/>
-            <Setter Property="FontFamily" Value="{DynamicResource FontFamily}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Grid>
-                            <Border Name="BackgroundBorder"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{DynamicResource ButtonBorderThickness}"
-                                    CornerRadius="{DynamicResource ButtonCornerRadius}">
-                                <Grid>
-                                    <!-- Toggle Dot Background -->
-                                    <Ellipse Width="8" Height="16"
-                                            Fill="{DynamicResource ToggleButtonOnColor}"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Top"
-                                            Margin="0,3,5,0" />
-
-                                    <!-- Toggle Dot with hover grow effect -->
-                                    <Ellipse Name="ToggleDot"
-                                            Width="8" Height="8"
-                                            Fill="{DynamicResource ButtonForegroundColor}"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Top"
-                                            Margin="0,3,5,0"
-                                            RenderTransformOrigin="0.5,0.5">
-                                        <Ellipse.RenderTransform>
-                                            <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                        </Ellipse.RenderTransform>
-                                    </Ellipse>
-
-                                    <!-- Content Presenter -->
-                                    <ContentPresenter HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Margin="10,2,10,2"/>
-                                </Grid>
-                            </Border>
-                        </Grid>
-
-                        <!-- Triggers for ToggleButton states -->
-                        <ControlTemplate.Triggers>
-                            <!-- Hover effect -->
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BackgroundBorder" Property="Background" Value="{DynamicResource ButtonBackgroundMouseoverColor}"/>
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <!-- Animation to grow the dot when hovered -->
-                                            <DoubleAnimation Storyboard.TargetName="ToggleDot"
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                            To="1.2" Duration="0:0:0.1"/>
-                                            <DoubleAnimation Storyboard.TargetName="ToggleDot"
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                            To="1.2" Duration="0:0:0.1"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <!-- Animation to shrink the dot back to original size when not hovered -->
-                                            <DoubleAnimation Storyboard.TargetName="ToggleDot"
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                            To="1.0" Duration="0:0:0.1"/>
-                                            <DoubleAnimation Storyboard.TargetName="ToggleDot"
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                            To="1.0" Duration="0:0:0.1"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-
-                            <!-- IsChecked state -->
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="ToggleDot" Property="VerticalAlignment" Value="Bottom"/>
-                                <Setter TargetName="ToggleDot" Property="Margin" Value="0,0,5,3"/>
-                            </Trigger>
-
-                            <!-- IsEnabled state -->
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="BackgroundBorder" Property="Background" Value="{DynamicResource ButtonBackgroundSelectedColor}"/>
-                                <Setter Property="Foreground" Value="DimGray"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
         <!-- Checkbox template -->
         <Style TargetType="CheckBox">
@@ -806,16 +711,6 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
-        <Style x:Key="labelfortweaks" TargetType="{x:Type Label}">
-            <Setter Property="Foreground" Value="{DynamicResource MainForegroundColor}" />
-            <Setter Property="Background" Value="{DynamicResource MainBackgroundColor}" />
-            <Setter Property="FontFamily" Value="{DynamicResource FontFamily}"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="White" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
 
         <Style x:Key="BorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource MainBackgroundColor}"/>
@@ -918,18 +813,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="ScrollVisibilityRectangle" TargetType="Rectangle">
-            <Setter Property="Visibility" Value="Collapsed"/>
-            <Style.Triggers>
-                <MultiDataTrigger>
-                    <MultiDataTrigger.Conditions>
-                        <Condition Binding="{Binding Path=ComputedHorizontalScrollBarVisibility, ElementName=scrollViewer}" Value="Visible"/>
-                        <Condition Binding="{Binding Path=ComputedVerticalScrollBarVisibility, ElementName=scrollViewer}" Value="Visible"/>
-                    </MultiDataTrigger.Conditions>
-                    <Setter Property="Visibility" Value="Visible"/>
-                </MultiDataTrigger>
-            </Style.Triggers>
-        </Style>
         <Style x:Key="RoundedProgressBarStyle" TargetType="ProgressBar">
             <Setter Property="Template">
                 <Setter.Value>
@@ -944,41 +827,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!-- Filter Chip Style — used by the Install tab category filter buttons -->
-        <Style x:Key="FilterChipStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="12,0,12,0"/>
-            <Setter Property="Width" Value="Auto"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Name="ChipBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{DynamicResource ButtonBorderThickness}"
-                                CornerRadius="{DynamicResource ButtonCornerRadius}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ChipBorder" Property="Background" Value="{DynamicResource ButtonBackgroundPressedColor}"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ChipBorder" Property="Background" Value="{DynamicResource ButtonBackgroundMouseoverColor}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ChipBorder" Property="Background" Value="{DynamicResource ButtonBackgroundSelectedColor}"/>
-                                <Setter Property="Foreground" Value="DimGray"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- Category filter chips. A toggle rather than a button, so the active filter is visible
-             on the chip itself instead of only in the results below. -->
     </Window.Resources>
     <Grid Background="{DynamicResource MainBackgroundColor}" ShowGridLines="False" Name="WPFMainGrid" Width="Auto" Height="Auto" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>

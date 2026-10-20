@@ -4,8 +4,7 @@
         "content": "7-Zip",
         "description": "7-Zip is a free and open-source file archiver, a utility that is used to compress and extract files.",
         "link": "https://www.7-zip.org/",
-        "winget": "7zip.7zip",
-        "foss": true
+        "winget": "7zip.7zip"
     },
     "adobe": {
         "category": "Becamex",
@@ -13,8 +12,7 @@
         "content": "Adobe Acrobat Reader",
         "description": "Adobe Acrobat Reader is a free PDF viewer with essential features for viewing, printing, and annotating PDF documents.",
         "link": "https://www.adobe.com/acrobat/pdf-reader.html",
-        "winget": "Adobe.Acrobat.Reader.64-bit",
-        "foss": false
+        "winget": "Adobe.Acrobat.Reader.64-bit"
     },
     "advancedip": {
         "category": "TamPhan",
@@ -22,8 +20,7 @@
         "content": "Advanced IP Scanner",
         "description": "Advanced IP Scanner is a fast and easy-to-use network scanner. It is designed to analyze LAN networks and provides information about connected devices.",
         "link": "https://www.advanced-ip-scanner.com/",
-        "winget": "Famatech.AdvancedIPScanner",
-        "foss": false
+        "winget": "Famatech.AdvancedIPScanner"
     },
     "alldup": {
         "category": "TamPhan",
@@ -31,8 +28,7 @@
         "content": "AllDup",
         "description": "AllDup is a powerful tool for finding and removing duplicate files on your computer.",
         "link": "https://www.alldup.com/",
-        "winget": "MTSD.AllDup",
-        "foss": false
+        "winget": "MTSD.AllDup"
     },
     "autohotkey": {
         "category": "TamPhan",
@@ -40,8 +36,7 @@
         "content": "AutoHotkey",
         "description": "AutoHotkey is a scripting language for Windows that allows users to create custom automation scripts and macros. It is often used for automating repetitive tasks and customizing keyboard shortcuts.",
         "link": "https://www.autohotkey.com/",
-        "winget": "AutoHotkey.AutoHotkey",
-        "foss": true
+        "winget": "AutoHotkey.AutoHotkey"
     },
     "bulkrenameutility": {
         "category": "TamPhan",
@@ -49,8 +44,7 @@
         "content": "Bulk Rename Utility",
         "description": "Bulk Rename Utility is a powerful tool for renaming multiple files at once, supporting various renaming methods and patterns.",
         "link": "https://www.bulkrenameutility.com/",
-        "winget": "TGRMNSoftware.BulkRenameUtility",
-        "foss": false
+        "winget": "TGRMNSoftware.BulkRenameUtility"
     },
     "chatgptcodex": {
         "category": "Becamex",
@@ -58,8 +52,7 @@
         "content": "ChatGPT Codex",
         "description": "The official ChatGPT desktop project app for Windows, distributed through the Microsoft Store.",
         "link": "https://apps.microsoft.com/detail/9PLM9XGG6VKS",
-        "winget": "msstore:9PLM9XGG6VKS",
-        "foss": false
+        "winget": "msstore:9PLM9XGG6VKS"
     },
     "chrome": {
         "category": "Becamex",
@@ -67,8 +60,7 @@
         "content": "Chrome",
         "description": "Google Chrome is a widely used web browser known for its speed, simplicity, and seamless integration with Google services.",
         "link": "https://www.google.com/chrome/",
-        "winget": "Google.Chrome",
-        "foss": false
+        "winget": "Google.Chrome"
     },
     "edge": {
         "category": "TamPhan",
@@ -76,8 +68,7 @@
         "content": "Edge",
         "description": "Microsoft Edge is a modern web browser built on Chromium, offering performance, security, and integration with Microsoft services.",
         "link": "https://www.microsoft.com/edge",
-        "winget": "Microsoft.Edge",
-        "foss": false
+        "winget": "Microsoft.Edge"
     },
     "facebook": {
         "category": "TamPhan",
@@ -93,8 +84,7 @@
         "content": "Foxit Reader",
         "description": "Foxit Reader is a lightweight PDF viewer that allows users to open, view, and annotate PDF documents.",
         "link": "https://www.foxitsoftware.com/pdf-reader/",
-        "winget": "Foxit.FoxitReader",
-        "foss": false
+        "winget": "Foxit.FoxitReader"
     },
     "git": {
         "category": "TamPhan",
@@ -102,8 +92,7 @@
         "content": "Git",
         "description": "Git is a distributed version control system widely used for tracking changes in source code during software development.",
         "link": "https://git-scm.com/",
-        "winget": "Git.Git",
-        "foss": true
+        "winget": "Git.Git"
     },
     "klite": {
         "category": "Becamex",
@@ -111,8 +100,7 @@
         "content": "K-Lite Codec Standard",
         "description": "K-Lite Codec Pack Standard is a collection of audio and video codecs and related tools, providing essential components for media playback.",
         "link": "https://www.codecguide.com/",
-        "winget": "CodecGuide.K-LiteCodecPack.Standard",
-        "foss": false
+        "winget": "CodecGuide.K-LiteCodecPack.Standard"
     },
     "logitechghub": {
         "category": "TamPhan",
@@ -120,8 +108,7 @@
         "content": "Logi G HUB",
         "description": "Logitech G HUB is a software application that allows users to customize and control their Logitech G gaming peripherals.",
         "link": "https://www.logitechg.com/en-us/innovation/g-hub.html",
-        "winget": "Logitech.GHUB",
-        "foss": false
+        "winget": "Logitech.GHUB"
     },
     "logitechoptionplus": {
         "category": "TamPhan",
@@ -129,8 +116,7 @@
         "content": "Logi Option+",
         "description": "Logitech Option Plus is a software application that allows users to customize and control their Logitech peripherals.",
         "link": "https://www.logitech.com/en-us/innovation/g-hub.html",
-        "winget": "Logitech.OptionPlus",
-        "foss": false
+        "winget": "Logitech.OptionPlus"
     },
     "mremoteng": {
         "category": "TamPhan",
@@ -138,8 +124,7 @@
         "content": "mRemoteNG",
         "description": "mRemoteNG is a free and open-source remote desktop connection manager.",
         "link": "https://mremoteng.org/",
-        "winget": "mRemoteNG.mRemoteNG",
-        "foss": true
+        "winget": "mRemoteNG.mRemoteNG"
     },
     "notepadplus": {
         "category": "TamPhan",
@@ -147,8 +132,7 @@
         "content": "Notepad++",
         "description": "Notepad++ is a free, open-source code editor and Notepad replacement with support for multiple languages.",
         "link": "https://notepad-plus-plus.org/",
-        "winget": "Notepad++.Notepad++",
-        "foss": true
+        "winget": "Notepad++.Notepad++"
     },
     "obs": {
         "category": "TamPhan",
@@ -156,8 +140,7 @@
         "content": "OBS Studio",
         "description": "OBS Studio is a free and open-source software for video recording and live streaming. It supports real-time video/audio capturing and mixing, making it popular among content creators.",
         "link": "https://obsproject.com/",
-        "winget": "OBSProject.OBSStudio",
-        "foss": true
+        "winget": "OBSProject.OBSStudio"
     },
     "onedrive": {
         "category": "TamPhan",
@@ -165,8 +148,7 @@
         "content": "OneDrive",
         "description": "OneDrive is a cloud storage service provided by Microsoft, allowing users to store and share files securely across devices.",
         "link": "https://onedrive.live.com/",
-        "winget": "Microsoft.OneDrive",
-        "foss": false
+        "winget": "Microsoft.OneDrive"
     },
     "pdf24": {
         "category": "Becamex",
@@ -174,8 +156,7 @@
         "content": "PDF24",
         "description": "PDF24 is a free online tool for creating, editing, and converting PDF files.",
         "link": "https://tools.pdf24.org/",
-        "winget": "geeksoftwareGmbH.PDF24Creator",
-        "foss": true
+        "winget": "geeksoftwareGmbH.PDF24Creator"
     },
     "powershell7": {
         "category": "TamPhan",
@@ -183,8 +164,7 @@
         "content": "PowerShell 7",
         "description": "PowerShell is a task automation framework and scripting language designed for system administrators, offering powerful command-line capabilities.",
         "link": "https://github.com/PowerShell/PowerShell",
-        "winget": "Microsoft.PowerShell",
-        "foss": true
+        "winget": "Microsoft.PowerShell"
     },
     "putty": {
         "category": "TamPhan",
@@ -192,8 +172,7 @@
         "content": "PuTTY",
         "description": "PuTTY is a free and open-source terminal emulator, serial console, and network file transfer application. It supports various network protocols such as SSH, Telnet, and SCP.",
         "link": "https://www.chiark.greenend.org.uk/~sgtatham/putty/",
-        "winget": "PuTTY.PuTTY",
-        "foss": true
+        "winget": "PuTTY.PuTTY"
     },
     "synologydriveclient": {
         "category": "Becamex",
@@ -201,8 +180,7 @@
         "content": "Synology Drive Client",
         "description": "Synology Drive Client is a cloud storage client that allows users to sync files between their local devices and Synology NAS.",
         "link": "https://www.synology.com/en-us/dsm/feature/drive",
-        "winget": "Synology.DriveClient",
-        "foss": false
+        "winget": "Synology.DriveClient"
     },
     "teamviewer": {
         "category": "TamPhan",
@@ -210,8 +188,7 @@
         "content": "TeamViewer",
         "description": "TeamViewer is a remote desktop software that allows users to control remote computers over the internet.",
         "link": "https://www.teamviewer.com/",
-        "winget": "TeamViewer.TeamViewer",
-        "foss": false
+        "winget": "TeamViewer.TeamViewer"
     },
     "tiktok": {
         "category": "TamPhan",
@@ -227,8 +204,7 @@
         "content": "TreeSize Free",
         "description": "TreeSize Free is a disk space manager that helps you analyze and visualize the space usage on your drives.",
         "link": "https://www.jam-software.com/treesize_free/",
-        "winget": "JAMSoftware.TreeSize.Free",
-        "foss": false
+        "winget": "JAMSoftware.TreeSize.Free"
     },
     "ultraviewer": {
         "category": "Becamex",
@@ -236,8 +212,7 @@
         "content": "Ultra Viewer",
         "description": "UltraViewer is a remote desktop software that allows users to control remote computers over the internet.",
         "link": "https://www.ultraviewer.net/",
-        "winget": "DucFabulous.UltraViewer",
-        "foss": false
+        "winget": "DucFabulous.UltraViewer"
     },
     "visualstudio2026": {
         "category": "TamPhan",
@@ -245,8 +220,7 @@
         "content": "VStudio Community 2026",
         "description": "Visual Studio Community 2026 is an integrated development environment (IDE) for building, debugging, and deploying applications.",
         "link": "https://visualstudio.microsoft.com/downloads/",
-        "winget": "Microsoft.VisualStudio.Community",
-        "foss": false
+        "winget": "Microsoft.VisualStudio.Community"
     },
     "vlc": {
         "category": "TamPhan",
@@ -254,16 +228,14 @@
         "content": "VLC (Video Player)",
         "description": "VLC Media Player is a free and open-source multimedia player that supports a wide range of audio and video formats. It is known for its versatility and cross-platform compatibility.",
         "link": "https://www.videolan.org/vlc/",
-        "winget": "VideoLAN.VLC",
-        "foss": false
+        "winget": "VideoLAN.VLC"
     },
     "vncviewer": {
         "category": "TamPhan",
         "choco": "vnc-viewer",
         "content": "VNC Viewer",
         "description": "VNC Viewer is a remote desktop client that allows users to connect to and control remote computers.",
-        "link": "https://www.realvnc.com/en/connect/download/viewer/",
-        "foss": false
+        "link": "https://www.realvnc.com/en/connect/download/viewer/"
     },
     "vncserver": {
         "category": "TamPhan",
@@ -271,8 +243,7 @@
         "content": "VNC Server",
         "description": "VNC Server is a remote desktop server that allows users to share their desktop with others.",
         "link": "https://www.realvnc.com/en/connect/download/server/",
-        "winget": "RealVNC.VNCServer",
-        "foss": false
+        "winget": "RealVNC.VNCServer"
     },
     "vscode": {
         "category": "TamPhan",
@@ -280,8 +251,7 @@
         "content": "VS Code",
         "description": "Visual Studio Code is a free, open-source code editor with support for multiple programming languages.",
         "link": "https://code.visualstudio.com/",
-        "winget": "Microsoft.VisualStudioCode",
-        "foss": false
+        "winget": "Microsoft.VisualStudioCode"
     },
     "wingetui": {
         "category": "TamPhan",
@@ -289,8 +259,7 @@
         "content": "UniGetUI",
         "description": "UniGetUI is a GUI for WinGet, Chocolatey, and other Windows CLI package managers.",
         "link": "https://devolutions.net/unigetui/",
-        "winget": "Devolutions.UniGetUI",
-        "foss": true
+        "winget": "Devolutions.UniGetUI"
     },
     "winrar": {
         "category": "Becamex",
@@ -298,8 +267,7 @@
         "content": "WinRAR",
         "description": "WinRAR is a powerful archive manager that allows you to create, manage, and extract compressed files.",
         "link": "https://www.win-rar.com/",
-        "winget": "RARLab.WinRAR",
-        "foss": false
+        "winget": "RARLab.WinRAR"
     },
     "winmerge": {
         "category": "TamPhan",
@@ -307,8 +275,7 @@
         "content": "WinMerge",
         "description": "WinMerge is a visual file and directory comparison tool.",
         "link": "https://winmerge.org/",
-        "winget": "WinMerge.WinMerge",
-        "foss": true
+        "winget": "WinMerge.WinMerge"
     },
     "zalopc": {
         "category": "Becamex",
@@ -316,7 +283,6 @@
         "content": "Zalo",
         "description": "Zalo is a popular messaging and social media app in Vietnam",
         "link": "https://zalo.me/",
-        "winget": "VNGCorp.Zalo",
-        "foss": false
+        "winget": "VNGCorp.Zalo"
     }
 }

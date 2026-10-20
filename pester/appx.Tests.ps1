@@ -514,10 +514,6 @@ Describe "Invoke-WPFAppxRemoval runspace body" {
                 Content = "Xbox Gaming Overlay"
                 PackageId = "Microsoft.XboxGamingOverlay"
             }
-            WPFAppxMicrosoft_WindowsNotepad = [pscustomobject]@{
-                Content = "Notepad"
-                PackageId = "Microsoft.WindowsNotepad"
-            }
             WPFAppxMSTeams = [pscustomobject]@{
                 Content = "Microsoft Teams"
                 PackageId = "MSTeams"
@@ -648,10 +644,9 @@ Describe "Invoke-WPFAppxRemoval runspace body" {
         $script:sync.ProcessRunning | Should -BeFalse
     }
 
-    It "applies special cleanup for Xbox overlay, Notepad, and Teams selections" {
+    It "applies special cleanup for Xbox overlay and Teams selections" {
         $selected = @(
             "WPFAppxMicrosoft_XboxGamingOverlay",
-            "WPFAppxMicrosoft_WindowsNotepad",
             "WPFAppxMSTeams"
         )
         foreach ($key in $selected) {
@@ -673,24 +668,18 @@ Describe "Invoke-WPFAppxRemoval runspace body" {
                 $Name -eq "AppCaptureEnabled" -and
                 $Value -eq 0
         }
-        Should -Invoke -CommandName Stop-Process -Times 1 -Exactly -ParameterFilter {
-            $Name -eq "dllhost" -and
-                $Force -eq $true -and
-                $Confirm -eq $false -and
-                $ErrorAction -eq "SilentlyContinue"
-        }
+        Should -Invoke -CommandName Stop-Process -Times 0 -Exactly -ParameterFilter { $Name -eq "dllhost" }
         Should -Invoke -CommandName Get-Package -Times 1 -Exactly -ParameterFilter {
             $Name -eq "Microsoft Teams*"
         }
         Should -Invoke -CommandName Uninstall-Package -Times 1 -Exactly -ParameterFilter {
             $InputObject.Name -eq "Microsoft Teams Meeting Add-in" -and $Force -eq $true
         }
-        Should -Invoke -CommandName Remove-AppxPackage -Times 3 -Exactly
+        Should -Invoke -CommandName Remove-AppxPackage -Times 2 -Exactly
         Should -Invoke -CommandName Remove-WinUtilProvisionedAPPX -Times 1 -Exactly -ParameterFilter {
-            $PackageList.Count -eq 3 -and
+            $PackageList.Count -eq 2 -and
             $PackageList[0] -eq "Microsoft.XboxGamingOverlay" -and
-            $PackageList[1] -eq "Microsoft.WindowsNotepad" -and
-            $PackageList[2] -eq "MSTeams"
+            $PackageList[1] -eq "MSTeams"
         }
         $script:sync.ProcessRunning | Should -BeFalse
     }

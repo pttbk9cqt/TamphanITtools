@@ -26,6 +26,8 @@ The online launcher requires a public, non-prerelease release containing `winuti
 
 Application selection stays in the app list, without a Selected Apps popup. Tweaks offers All and Clear (All selects checkboxes without applying switches); named presets remain available through the command line. AppX selection offers Select All and Clear Selection. Maintenance includes Restart Explorer and returns focus to its tab after completion feedback.
 
+The compiled script retains shared package-manager, undo, logging and Maintenance payloads. Retired UI styles, unused FOSS metadata and the excluded Notepad removal hook have been removed without dropping active features.
+
 ### How to open an admin terminal
 
 - **Start menu:** Right-click Start → *Windows PowerShell (Admin)* or *Terminal (Admin)*
