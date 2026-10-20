@@ -40,7 +40,6 @@ autolabeler:
   - label: 'documentation'
     files:
       - '**/*.md'
-      - 'docs/**/*'
 replacers:
   - search: /"/g
     replace: ''

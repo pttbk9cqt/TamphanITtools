@@ -4,9 +4,8 @@
 ![Downloads](https://img.shields.io/github/downloads/ChrisTitusTech/winutil/winutil.ps1?label=Total%20Downloads&style=for-the-badge)
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/RUbZUZyByQ?theme=default-inverted&style=for-the-badge)](https://discord.gg/RUbZUZyByQ)
 
-A curated compilation of Windows system tasks streamline **installs**, debloat with **tweaks**, troubleshoot with **config**, and configure **Windows updates**. Run it fresh on every new Windows install.
+Windows utility with separate **Install**, **Tweaks**, **Maintenance**, and **AppX Removal** tabs. AppX Removal excludes Calculator, Notepad, Paint, Photos, and Snipping Tool.
 
-![Title Screen](docs/src/assets/branding/title-screen.png)
 
 
 ---
@@ -61,7 +60,7 @@ See https://github.com/ChrisTitusTech/winutil/blob/main/.github/CONTRIBUTING.md
 
 ## Resources
 
-- [Official Documentation](https://winutil.christitus.com/)
+- [Upstream Documentation](https://winutil.christitus.com/)
 - [YouTube Tutorial](https://www.youtube.com/watch?v=6UQZ5oQg8XA)
 - [ChrisTitus.com Article](https://christitus.com/windows-tool/)
 - [Known Issues](https://winutil.christitus.com/knownissues/)

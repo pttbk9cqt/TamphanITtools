@@ -177,10 +177,10 @@
         "winget": "geeksoftwareGmbH.PDF24Creator",
         "foss": true
     },
-    "powershell": {
+    "powershell7": {
         "category": "TamPhan",
         "choco": "powershell-core",
-        "content": "PowerShell",
+        "content": "PowerShell 7",
         "description": "PowerShell is a task automation framework and scripting language designed for system administrators, offering powerful command-line capabilities.",
         "link": "https://github.com/PowerShell/PowerShell",
         "winget": "Microsoft.PowerShell",

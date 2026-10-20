@@ -341,6 +341,21 @@ Describe "App navigation config" {
 }
 
 Describe "UI-rendered config entries" {
+    It "excludes essential Windows tools from the AppX catalog and default preset" {
+        $appx = Get-WinUtilConfigObject -Name "appx"
+        $preset = Get-WinUtilConfigObject -Name "preset"
+        foreach ($key in @(
+            'WPFAppxMicrosoft_WindowsCalculator',
+            'WPFAppxMicrosoft_WindowsNotepad',
+            'WPFAppxMicrosoft_Paint',
+            'WPFAppxMicrosoft_WindowsPhotos',
+            'WPFAppxMicrosoft_ScreenSketch'
+        )) {
+            $appx.PSObject.Properties.Name | Should -Not -Contain $key
+            $preset.AppxDefault | Should -Not -Contain $key
+        }
+    }
+
     It "contains required AppX fields" {
         $appx = Get-WinUtilConfigObject -Name "appx"
         $requiredFields = @("Category", "Content", "Description", "Panel", "PackageId")

@@ -3,7 +3,6 @@ name: Pre-Release WinUtil
 permissions:
   contents: write
   actions: read
-  pull-requests: write
 
 on:
   workflow_dispatch: # Manual trigger added
@@ -19,41 +18,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Generate Dev Docs and Update JSON Links
-        shell: pwsh
-        run: |
-          Set-Location tools
-          ./devdocs-generator.ps1
-
       - name: Compile project
         shell: pwsh
         run: |
           Set-ExecutionPolicy Bypass -Scope Process -Force; ./Compile.ps1
         continue-on-error: false # Directly fail the job on error, removing the need for a separate check
-
-      - name: Create Pull Request for Updated Docs and JSON Links
-        id: cpr
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.AUTO_MERGE }}
-          commit-message: 'chore: Update generated dev docs and JSON links'
-          title: 'chore: Update generated dev docs and JSON links'
-          body: 'Automated update of generated documentation and JSON config links from pre-release build'
-          branch: docs-update
-          delete-branch: true
-          add-paths: |
-            docs/src/content/docs/code-reference/
-            config/tweaks.json
-          labels: |
-            automated
-            documentation
-            skip-changelog
-
-      - name: Check outputs
-        shell: bash
-        run: |
-          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
-          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
 
       - name: Set Version to Todays Date
         id: extract_version
@@ -117,7 +86,7 @@ jobs:
           RELEASE_NOTES: ${{ steps.generate_notes.outputs.body }}
         run: |
           $filteredNotes = ($env:RELEASE_NOTES -split '\r?\n' | Where-Object {
-            $_ -notmatch '(?i)Update (Generated Dev Docs|Sponsors)'
+            $_ -notmatch '(?i)Update Sponsors'
           }) -join "`n"
 
           $delimiter = [guid]::NewGuid().ToString()

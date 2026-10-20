@@ -135,30 +135,6 @@
     "PackageId": "Microsoft.WindowsAlarms",
     "StoreId": "9WZDNCRFJ3PR"
   },
-  "WPFAppxMicrosoft_Paint": {
-    "Category": "Utilities & Productivity",
-    "Content": "Paint",
-    "Description": "Provides built-in digital sketching, basic image editing, and pixel-level graphic manipulation tools.",
-    "Panel": "0",
-    "PackageId": "Microsoft.Paint",
-    "StoreId": "9PCFS5B6T72H"
-  },
-  "WPFAppxMicrosoft_WindowsNotepad": {
-    "Category": "Utilities & Productivity",
-    "Content": "Notepad",
-    "Description": "Provides a lightweight text editor with multi-tab support for plain text files and code snippets.",
-    "Panel": "0",
-    "PackageId": "Microsoft.WindowsNotepad",
-    "StoreId": "9MSMLRH6LZF3"
-  },
-  "WPFAppxMicrosoft_ScreenSketch": {
-    "Category": "Utilities & Productivity",
-    "Content": "Snipping Tool",
-    "Description": "Captures screenshots or screen recordings with built-in markup, image cropping, and optical character recognition (OCR).",
-    "Panel": "0",
-    "PackageId": "Microsoft.ScreenSketch",
-    "StoreId": "9MZ95KL8MR0L"
-  },
   "WPFAppxMicrosoft_Copilot": {
     "Category": "Bing & Web Services",
     "Content": "Copilot",
@@ -167,14 +143,6 @@
     "PackageId": "Microsoft.Copilot",
     "StoreId": "9NHT9RB2F4HD"
   },
-  "WPFAppxMicrosoft_WindowsCalculator": {
-    "Category": "Utilities & Productivity",
-    "Content": "Calculator",
-    "Description": "Performs standard arithmetic, scientific operations, programming calculations, and unit conversions.",
-    "Panel": "0",
-    "PackageId": "Microsoft.WindowsCalculator",
-    "StoreId": "9WZDNCRFHVN5"
-  },
   "WPFAppxMicrosoft_WindowsCamera": {
     "Category": "Utilities & Productivity",
     "Content": "Camera",
@@ -182,14 +150,6 @@
     "Panel": "0",
     "PackageId": "Microsoft.WindowsCamera",
     "StoreId": "9WZDNCRFJBBG"
-  },
-  "WPFAppxMicrosoft_WindowsPhotos": {
-    "Category": "Utilities & Productivity",
-    "Content": "Photos",
-    "Description": "Organizes, views, and crops local images with basic color adjustment and album creation tools.",
-    "Panel": "0",
-    "PackageId": "Microsoft.Windows.Photos",
-    "StoreId": "9WZDNCRFJBH4"
   },
   "WPFAppxMicrosoft_BingNews": {
     "Category": "Bing & Web Services",

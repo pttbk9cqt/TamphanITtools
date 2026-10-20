@@ -130,6 +130,7 @@ Describe "XAML document" {
             "WPFTab1BT",
             "WPFTab2BT",
             "WPFTab3BT",
+            "WPFTab4BT",
             "appscategory",
             "appspanel",
             "tweakspanel",
@@ -140,14 +141,12 @@ Describe "XAML document" {
             "WPFAdvanced",
             "WPFClearTweaksSelection",
             "WPFGetInstalledTweaks",
-            "WPFAppxRemoval",
             "WPFTweaksbutton",
             "WPFUndoall",
             "WPFDefaultAppxSelection",
             "WPFGetInstalledAppx",
             "WPFSelectAllAppx",
             "WPFClearAppxSelection",
-            "WPFBackToTweaks",
             "WPFInstallSelectedAppx",
             "WPFRemoveSelectedAppx"
         )
@@ -200,27 +199,15 @@ Describe "XAML document" {
         }
     }
 
-    It "opens AppX removal from Tweaks and provides a return path" {
+    It "opens AppX from its own navigation tab without Tweaks shortcuts" {
         $navPanel = $script:xaml.SelectSingleNode('//*[local-name()="StackPanel"][@Name="NavDockPanel"]')
-        $tweaksTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab2"]')
         $appxTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab4"]')
-        $openButton = $tweaksTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFAppxRemoval"]')
-        $buttonNames = @($openButton.ParentNode.SelectNodes('./*[local-name()="Button"]') | ForEach-Object { $_.GetAttribute("Name") })
-        $getInstalledIndex = [array]::IndexOf($buttonNames, "WPFGetInstalledTweaks")
-        $openAppxIndex = [array]::IndexOf($buttonNames, "WPFAppxRemoval")
-        $buttonSource = Get-Content -Path $script:buttonScriptPath -Raw
-        $tabSource = Get-Content -Path (Join-Path $script:functionRoot "public\Invoke-WPFTab.ps1") -Raw
-
-        $navPanel.SelectSingleNode('./*[local-name()="ToggleButton"][@Name="WPFTab4BT"]') | Should -BeNullOrEmpty
-        $openButton.GetAttribute("Content").Trim() | Should -Be "AppX Removal"
-        $openAppxIndex | Should -Be ($getInstalledIndex + 1)
-        $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFBackToTweaks"]') | Should -Not -BeNullOrEmpty
-        $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFInstallSelectedAppx"]') | Should -Not -BeNullOrEmpty
-        $appxTab.SelectSingleNode('.//*[local-name()="Button"][@Name="WPFRemoveSelectedAppx"]') | Should -Not -BeNullOrEmpty
-        $buttonSource | Should -Match '"WPFAppxRemoval"\s*\{Invoke-WPFTab "WPFTab4BT"\}'
-        $buttonSource | Should -Match '"WPFBackToTweaks"\s*\{Invoke-WPFTab "WPFTab2BT"\}'
-        $buttonSource | Should -Match '"WPFInstallSelectedAppx"\s*\{Invoke-WPFAppxInstall\}'
-        $tabSource | Should -Match '\$sync\.\$tabNav\.Items\[\$tabNumber\]\.IsSelected = \$true'
+        $navPanel.SelectSingleNode('./*[local-name()="ToggleButton"][@Name="WPFTab4BT"]') | Should -Not -BeNullOrEmpty
+        $script:xaml.SelectSingleNode('//*[@Name="WPFAppxRemoval" or @Name="WPFBackToTweaks"]') | Should -BeNullOrEmpty
+        $appxTab.SelectSingleNode('.//*[@Name="WPFInstallSelectedAppx"]') | Should -Not -BeNullOrEmpty
+        $appxTab.SelectSingleNode('.//*[@Name="WPFRemoveSelectedAppx"]') | Should -Not -BeNullOrEmpty
+        $mainScript = Get-Content -Path $script:mainScriptPath -Raw
+        $mainScript | Should -Match '"A"\s*\{ Invoke-WPFButton "WPFTab4BT"'
     }
 
     It "centers top bar controls vertically" {
@@ -257,7 +244,7 @@ Describe "XAML document" {
         $comboToggleStyle | Should -Not -BeNullOrEmpty
         $comboToggle.GetAttribute("Style") | Should -Be "{StaticResource ComboBoxToggleButtonStyle}"
         $comboItemStyle | Should -Not -BeNullOrEmpty
-        $navButtons.Count | Should -Be 3
+        $navButtons.Count | Should -Be 4
         foreach ($navButton in $navButtons) {
             $navButton.GetAttribute("Style") | Should -Be "{StaticResource TabToggleButton}"
         }
