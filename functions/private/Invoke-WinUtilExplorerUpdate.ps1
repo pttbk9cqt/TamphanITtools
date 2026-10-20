@@ -32,7 +32,10 @@ public class Win32 {
                 [ref]([IntPtr]::Zero))
         }
     } elseif ($action -eq "restart") {
-        taskkill.exe /F /IM "explorer.exe"
-        Start-Process "explorer.exe"
+        $sessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
+        Get-Process -Name explorer -ErrorAction SilentlyContinue |
+            Where-Object { $_.SessionId -eq $sessionId } |
+            ForEach-Object { Stop-Process -Id $_.Id -Force -ErrorAction Stop }
+        Start-Process -FilePath (Join-Path $env:SystemRoot 'explorer.exe') -ErrorAction Stop
     }
 }

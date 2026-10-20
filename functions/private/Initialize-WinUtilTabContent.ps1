@@ -13,7 +13,7 @@ function Initialize-WinUtilTabContent {
     }
 
     switch ($TabName) {
-        "Install" {
+        "Application" {
             Initialize-WPFUI -targetGridName "appscategory"
 
             Initialize-WPFUI -targetGridName "appspanel"
@@ -21,9 +21,13 @@ function Initialize-WinUtilTabContent {
         "Tweaks" {
             Invoke-WPFUIElements -configVariable $sync.configs.tweaks -targetGridName "tweakspanel" -columncount 2
         }
+        "Update" {
+            Invoke-WPFUIElements -configVariable $sync.configs.update -targetGridName "updatepanel" -columncount 2
+            Invoke-WPFMaintenanceToggle -Name 'WPFToggleWindowsUpdate' -Refresh
+        }
         "Maintenance" {
             Invoke-WPFUIElements -configVariable $sync.configs.maintenance -targetGridName "maintenancepanel" -columncount 2
-            foreach ($toggleName in @('WPFToggleMaintenanceTasks','WPFToggleMaintenanceMonitor','WPFToggleWindowsUpdate')) {
+            foreach ($toggleName in @('WPFToggleMaintenanceTasks','WPFToggleMaintenanceMonitor','WPFToggleMaintenanceWindowsUpdate')) {
                 Invoke-WPFMaintenanceToggle -Name $toggleName -Refresh
             }
         }

@@ -3,7 +3,7 @@ function Invoke-WPFMaintenance {
         Reviews and dispatches maintenance actions without blocking the WPF thread.
     #>
     param(
-        [ValidateSet('InstallTasks','RemoveTasks','ExportInventory','InstallMonitor','RemoveMonitor','Tasks')]
+        [ValidateSet('InstallTasks','RemoveTasks','ExportInventory','InstallMonitor','RemoveMonitor','Tasks','RestartExplorer')]
         [string]$Action,
         [ValidateSet('','WPFToggleMaintenanceTasks','WPFToggleMaintenanceMonitor')]
         [string]$StateToggle = ''
@@ -21,6 +21,9 @@ function Invoke-WPFMaintenance {
 
     try {
         $confirmation = switch ($Action) {
+            'RestartExplorer' {
+                'Restart Windows Explorer in this session? The taskbar and open File Explorer windows will briefly close. Continue?'
+            }
             'InstallTasks' {
                 "Install the original files in C:\IT-MAINTENANCE and create/replace IT-SHUTDOWN (daily 21:30, shutdown after 600 seconds) and IT-CLEAN (daily 12:30)?`nCLEANER.bat keeps its original behavior: clears the print queue and deletes temporary, .log/.old and other matching files across the system drive.`nExisting files are backed up. Continue?"
             }
@@ -31,7 +34,7 @@ function Invoke-WPFMaintenance {
                 "Run the original GET-INFOMATION code now and write C:\IT-MAINTENANCE\$env:COMPUTERNAME.csv and .txt?`nExisting reports with these names will be replaced. Software is read for this elevated account and the machine. No restart is required. Continue?"
             }
             'InstallMonitor' {
-                "Install/replace the original IT-MAINTENANCE task at 09:00 and 14:00 Monday-Friday?`nC: receives free-space warnings. If D: remains below 20 GB after the original warning and 60-minute wait, its drive letter is automatically removed; it is restored when free space reaches 20 GB. Disk scans/optimization run when both exceed 30 GB.`nD: must be present during installation. Continue?"
+                "Install/replace the original IT-MAINTENANCE task at 09:00 and 14:00 Monday-Friday?`nC: and E: receive free-space warnings (E: is optional and is never hidden). If D: remains below 20 GB after the original warning and 60-minute wait, its drive letter is automatically removed; it is restored when free space reaches 20 GB. Disk scans/optimization run when both exceed 30 GB.`nD: must be present during installation. Continue?"
             }
             'RemoveMonitor' {
                 "Stop any running IT-MAINTENANCE task instance and delete the task from Task Scheduler?`nInstalled scripts, VolumeInfo.json, logs and reports in C:\IT-MAINTENANCE will be kept. Continue?"
@@ -72,6 +75,7 @@ function Invoke-WPFMaintenance {
             }
             $icon = if ($completed.Failed) { 'Error' } else { 'Information' }
             Show-WinUtilMessage -Title Maintenance -Message $completed.Message -Icon $icon | Out-Null
+            Restore-WPFMaintenanceWindow
         }
         $sync.ProcessRunning = $true
         Set-WinUtilTweaksProgressIndicator -Visible $true -Label "Maintenance: $Action" -Percent 0

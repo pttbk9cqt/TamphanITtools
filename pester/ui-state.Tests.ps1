@@ -142,25 +142,11 @@ namespace System.Windows.Controls
                     WPFToggleDarkMode = [pscustomobject]@{}
                 }
             }
-            WPFselectedAppsButton = [pscustomobject]@{
-                Content = ""
-            }
-            selectedAppsstackPanel = [pscustomobject]@{
-                Children = [System.Collections.ArrayList]::new()
-            }
         })
         $script:sync = $testSync
         $global:sync = $testSync
     }
 
-    function Add-SelectedAppsMenuItem {
-        param($name, $key)
-
-        $null = $global:sync.selectedAppsstackPanel.Children.Add([pscustomobject]@{
-            Name = $name
-            Key = $key
-        })
-    }
 }
 
 Describe "Update-WinUtilSelections" {
@@ -406,9 +392,6 @@ Describe "Invoke-WPFSelectedCheckboxesUpdate" {
         @($script:sync.selectedTweaks) | Should -Be @("WPFTweaksTelemetry")
         @($script:sync.selectedToggles) | Should -Be @("WPFToggleDarkMode")
         @($script:sync.selectedAppx) | Should -Be @("WPFAppxExample")
-        $script:sync.WPFselectedAppsButton.Content | Should -Be "Selected Apps: 1"
-        $script:sync.selectedAppsstackPanel.Children.Count | Should -Be 1
-        $script:sync.selectedAppsstackPanel.Children[0].Key | Should -Be "WPFInstallGit"
     }
 
     It "removes checkbox keys from the matching selected lists" {
@@ -426,8 +409,6 @@ Describe "Invoke-WPFSelectedCheckboxesUpdate" {
         $script:sync.selectedTweaks.Count | Should -Be 0
         $script:sync.selectedToggles.Count | Should -Be 0
         $script:sync.selectedAppx.Count | Should -Be 0
-        $script:sync.WPFselectedAppsButton.Content | Should -Be "Selected Apps: 0"
-        $script:sync.selectedAppsstackPanel.Children.Count | Should -Be 0
     }
 }
 
@@ -478,9 +459,6 @@ Describe "Invoke-WPFGetInstalled selection state" {
 
         @($script:sync.selectedApps) | Should -Be @("WPFInstallGit")
         $script:sync.WPFInstallGit.IsChecked | Should -BeTrue
-        $script:sync.WPFselectedAppsButton.Content | Should -Be "Selected Apps: 1"
-        $script:sync.selectedAppsstackPanel.Children.Count | Should -Be 1
-        $script:sync.selectedAppsstackPanel.Children[0].Key | Should -Be "WPFInstallGit"
     }
 
     It "clears the running state when detection fails" {
@@ -540,7 +518,7 @@ Describe "Reset-WPFCheckBoxes" {
         Remove-Variable -Name sync -Scope Global -ErrorAction SilentlyContinue
     }
 
-    It "syncs non-toggle checkboxes from selected lists and updates selected app UI state" {
+    It "syncs non-toggle checkboxes from selected lists without a selected-app popup" {
         Reset-WPFCheckBoxes
 
         $script:sync.WPFInstallGit.IsChecked | Should -BeTrue
@@ -549,10 +527,6 @@ Describe "Reset-WPFCheckBoxes" {
         $script:sync.WPFTweaksTelemetry.IsChecked | Should -BeTrue
         $script:sync.WPFAppxExample.IsChecked | Should -BeTrue
         $script:sync.WPFToggleDarkMode.IsChecked | Should -BeFalse
-        $script:sync.WPFselectedAppsButton.Content | Should -Be "Selected Apps: 1"
-        $script:sync.selectedAppsstackPanel.Children.Count | Should -Be 1
-        $script:sync.selectedAppsstackPanel.Children[0].Name | Should -Be "Git"
-        $script:sync.selectedAppsstackPanel.Children[0].Key | Should -Be "WPFInstallGit"
     }
 
     It "restores imported toggles when requested without changing absent toggles" {

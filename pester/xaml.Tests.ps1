@@ -69,7 +69,7 @@ BeforeAll {
 
     function script:Get-WinUtilGeneratedControlNames {
         $names = New-Object System.Collections.Generic.List[string]
-        foreach ($configName in @("appnavigation", "tweaks", "appx", "maintenance")) {
+        foreach ($configName in @("appnavigation", "tweaks", "appx", "maintenance", "update")) {
             $config = Get-WinUtilConfigObject -Name $configName
             foreach ($entry in $config.PSObject.Properties.Name) {
                 $names.Add($entry)
@@ -127,24 +127,23 @@ Describe "XAML document" {
             "WPFTab2",
             "WPFTab3",
             "WPFTab4",
+            "WPFTab5",
+            "WPFTab6",
             "WPFTab1BT",
             "WPFTab2BT",
             "WPFTab3BT",
             "WPFTab4BT",
+            "WPFTab5BT",
+            "WPFTab6BT",
             "appscategory",
             "appspanel",
             "tweakspanel",
             "maintenancepanel",
             "appxpanel",
-            "WPFstandard",
-            "WPFminimal",
-            "WPFAdvanced",
+            "WPFSelectAllTweaks",
             "WPFClearTweaksSelection",
-            "WPFGetInstalledTweaks",
             "WPFTweaksbutton",
             "WPFUndoall",
-            "WPFDefaultAppxSelection",
-            "WPFGetInstalledAppx",
             "WPFSelectAllAppx",
             "WPFClearAppxSelection",
             "WPFInstallSelectedAppx",
@@ -166,8 +165,8 @@ Describe "XAML document" {
     It "renders the compact Maintenance controls from one config panel" {
         $maintenanceTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Header="Maintenance"]')
         $panel = $maintenanceTab.SelectSingleNode('.//*[@Name="maintenancepanel"]')
-        [int]$panel.GetAttribute('Width') | Should -Be 880
-        $panel.GetAttribute('HorizontalAlignment') | Should -Be 'Left'
+        [int]$panel.GetAttribute('MaxWidth') | Should -Be 1100
+        $panel.GetAttribute('HorizontalAlignment') | Should -Be 'Stretch'
         @($maintenanceTab.SelectNodes('.//*[local-name()="CheckBox"]')).Count | Should -Be 0
         $maintenanceTab.SelectSingleNode('.//*[local-name()="UniformGrid"]') | Should -BeNullOrEmpty
         $script:xaml.SelectSingleNode('//*[@Name="WPFUpdatesdefault" or @Name="WPFUpdatesdisable"]') | Should -BeNullOrEmpty
@@ -182,10 +181,12 @@ Describe "XAML document" {
         $tabItems = @($script:xaml.SelectNodes('//*[local-name()="TabControl"][@Name="WPFTabNav"]/*[local-name()="TabItem"]'))
         $actualTabs = @($tabItems | ForEach-Object { "$($_.GetAttribute("Name")):$($_.GetAttribute("Header"))" })
         $expectedTabs = @(
-            "WPFTab1:Install",
-            "WPFTab2:Tweaks",
-            "WPFTab3:Maintenance",
-            "WPFTab4:AppX"
+            "WPFTab1:Application",
+            "WPFTab2:Update",
+            "WPFTab3:Activation",
+            "WPFTab4:Tweaks",
+            "WPFTab5:Maintenance",
+            "WPFTab6:AppX"
         )
 
         if (@($actualTabs).Count -ne $expectedTabs.Count) {
@@ -199,15 +200,36 @@ Describe "XAML document" {
         }
     }
 
+    It "widens Update to 800 and keeps removed notes and FOSS UI out of the interface" {
+        $update = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Header="Update"]')
+        $update.SelectSingleNode('.//*[@Name="updatepanel"]').ParentNode.GetAttribute('MaxWidth') | Should -Be '800'
+        foreach ($header in 'Tweaks','AppX') {
+            $tab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Header="' + $header + '"]')
+            $tab.InnerText | Should -Not -Match 'Note:'
+        }
+        $navigation = Get-WinUtilConfigObject -Name appnavigation
+        $navigation.PSObject.Properties.Name | Should -Not -Contain 'WPFInstallFOSSInfo'
+        $entrySource = Get-Content (Join-Path $script:functionRoot 'private/Initialize-InstallAppEntry.ps1') -Raw
+        $entrySource | Should -Not -Match 'FossBadge|fossBadge'
+        $tweaks = Get-WinUtilConfigObject -Name tweaks
+        foreach ($removed in 'WPFMultiplaneOverlay','WPFAddUltPerf','WPFRemoveUltPerf') {
+            $tweaks.PSObject.Properties.Name | Should -Not -Contain $removed
+        }
+        $maintenance = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Header="Maintenance"]')
+        $repair = $maintenance.SelectSingleNode('.//*[@Name="WPFFixesWinget"]')
+        $repair.ParentNode.ParentNode.LocalName | Should -Be 'Border'
+        $repair.ParentNode.ParentNode.SelectSingleNode('.//*[@Name="maintenancepanel"]') | Should -BeNullOrEmpty
+    }
+
     It "opens AppX from its own navigation tab without Tweaks shortcuts" {
         $navPanel = $script:xaml.SelectSingleNode('//*[local-name()="StackPanel"][@Name="NavDockPanel"]')
-        $appxTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab4"]')
-        $navPanel.SelectSingleNode('./*[local-name()="ToggleButton"][@Name="WPFTab4BT"]') | Should -Not -BeNullOrEmpty
+        $appxTab = $script:xaml.SelectSingleNode('//*[local-name()="TabItem"][@Name="WPFTab6"]')
+        $navPanel.SelectSingleNode('./*[local-name()="ToggleButton"][@Name="WPFTab6BT"]') | Should -Not -BeNullOrEmpty
         $script:xaml.SelectSingleNode('//*[@Name="WPFAppxRemoval" or @Name="WPFBackToTweaks"]') | Should -BeNullOrEmpty
         $appxTab.SelectSingleNode('.//*[@Name="WPFInstallSelectedAppx"]') | Should -Not -BeNullOrEmpty
         $appxTab.SelectSingleNode('.//*[@Name="WPFRemoveSelectedAppx"]') | Should -Not -BeNullOrEmpty
         $mainScript = Get-Content -Path $script:mainScriptPath -Raw
-        $mainScript | Should -Match '"A"\s*\{ Invoke-WPFButton "WPFTab4BT"'
+        $mainScript | Should -Match '"A"\s*\{ Invoke-WPFButton "WPFTab6BT"'
     }
 
     It "centers top bar controls vertically" {
@@ -244,7 +266,7 @@ Describe "XAML document" {
         $comboToggleStyle | Should -Not -BeNullOrEmpty
         $comboToggle.GetAttribute("Style") | Should -Be "{StaticResource ComboBoxToggleButtonStyle}"
         $comboItemStyle | Should -Not -BeNullOrEmpty
-        $navButtons.Count | Should -Be 4
+        $navButtons.Count | Should -Be 6
         foreach ($navButton in $navButtons) {
             $navButton.GetAttribute("Style") | Should -Be "{StaticResource TabToggleButton}"
         }
@@ -333,8 +355,6 @@ Describe "XAML and sync wiring" {
             "selectedToggles",
             "currentTab",
             "selectedAppsStackPanel",
-            "selectedAppsstackPanel",
-            "selectedAppsPopup",
             "appPopup",
             "appPopupSelectedApp",
             "ItemsControl",
@@ -352,6 +372,7 @@ Describe "XAML and sync wiring" {
             "ToggleStatusCache",
             "InstallAppRenderQueue",
             "InstallAppEntriesRendered",
+            "WindowsUpdateRunning",
             "AppCategoryChips",
             "SelectedAppCategories",
             "AppCategoryAutoExpanded"

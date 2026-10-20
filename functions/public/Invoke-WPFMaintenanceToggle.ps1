@@ -1,10 +1,10 @@
 function Invoke-WPFMaintenanceToggle {
     <# .SYNOPSIS
-        Applies or refreshes one stateful switch on the Maintenance tab.
+        Applies or refreshes one stateful switch on the Maintenance or Update tab.
     #>
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('WPFToggleMaintenanceTasks','WPFToggleMaintenanceMonitor','WPFToggleWindowsUpdate')]
+        [ValidateSet('WPFToggleMaintenanceTasks','WPFToggleMaintenanceMonitor','WPFToggleWindowsUpdate','WPFToggleMaintenanceWindowsUpdate')]
         [string]$Name,
         [switch]$Refresh
     )
@@ -12,8 +12,8 @@ function Invoke-WPFMaintenanceToggle {
     $toggle = $sync[$Name]
     if ($null -eq $toggle) { return }
 
-    if ($Name -eq 'WPFToggleWindowsUpdate') {
-        Invoke-WPFWindowsUpdate -Refresh:$Refresh
+    if ($Name -in @('WPFToggleWindowsUpdate','WPFToggleMaintenanceWindowsUpdate')) {
+        Invoke-WPFWindowsUpdate -Name $Name -Refresh:$Refresh
         return
     }
 

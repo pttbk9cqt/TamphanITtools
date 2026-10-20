@@ -51,19 +51,5 @@
         "Type": "Button",
         "Order": "2",
         "Description": "Show installed applications"
-    },
-    "WPFselectedAppsButton": {
-        "Content": "Selected Apps: 0",
-        "Category": "__Selection",
-        "Type": "Button",
-        "Order": "3",
-        "Description": "Show the selected applications"
-    },
-    "WPFInstallFOSSInfo": {
-        "Content": "Free and Open Source Software",
-        "Category": "__Selection",
-        "Type": "Note",
-        "Order": "0",
-        "Description": "Information about the #FOSS label on application entries"
     }
 }

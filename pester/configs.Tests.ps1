@@ -349,7 +349,12 @@ Describe "UI-rendered config entries" {
             'WPFAppxMicrosoft_WindowsNotepad',
             'WPFAppxMicrosoft_Paint',
             'WPFAppxMicrosoft_WindowsPhotos',
-            'WPFAppxMicrosoft_ScreenSketch'
+            'WPFAppxMicrosoft_ScreenSketch',
+            'WPFAppxMicrosoft_WindowsCamera',
+            'WPFAppxMicrosoft_ZuneMusic',
+            'WPFAppxMicrosoft_MicrosoftStickyNotes',
+            'WPFAppxMicrosoft_WindowsAlarms',
+            'WPFAppxMicrosoft_Todos'
         )) {
             $appx.PSObject.Properties.Name | Should -Not -Contain $key
             $preset.AppxDefault | Should -Not -Contain $key

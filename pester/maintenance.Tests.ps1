@@ -11,8 +11,9 @@ BeforeAll {
     function Invoke-WPFRunspace { param($ArgumentList,$ScriptBlock) }
     function Get-ScheduledTask { param($TaskName) }
     function Get-WinUtilOriginalMaintenanceStatus { param($Status) $true }
-    function Invoke-WPFWindowsUpdate { param([switch]$Refresh) }
+    function Invoke-WPFWindowsUpdate { param([switch]$Refresh,[string]$Name) }
     function Invoke-WPFFixesWinget { }
+    function Restore-WPFMaintenanceWindow { }
 
 
 }
@@ -27,6 +28,7 @@ Describe 'Maintenance actions' {
         Mock Write-WinUtilLog {}
         Mock Set-WinUtilTweaksProgressIndicator {}
         Mock Invoke-WPFRunspace {}
+        Mock Restore-WPFMaintenanceWindow {}
         Mock Start-Process { [pscustomobject]@{ ExitCode = 0 } }
         Mock Get-ScheduledTask { [pscustomobject]@{ State = 'Ready' } }
     }
@@ -36,7 +38,7 @@ Describe 'Maintenance actions' {
         foreach ($entry in $sync.configs.maintenance.PSObject.Properties | Where-Object { $_.Value.Type -eq 'Button' -and $_.Value.Action }) {
             { Invoke-WPFButton -Button $entry.Name } | Should -Not -Throw
         }
-        Should -Invoke Invoke-WPFMaintenance -Times 2 -Exactly
+        Should -Invoke Invoke-WPFMaintenance -Times 3 -Exactly
         Should -Invoke Invoke-WPFMaintenance -Times 1 -Exactly -ParameterFilter { $Action -eq 'ExportInventory' }
         Should -Invoke Invoke-WPFMaintenance -Times 1 -Exactly -ParameterFilter { $Action -eq 'Tasks' }
     }
@@ -132,6 +134,7 @@ Describe 'Maintenance actions' {
         Invoke-WPFMaintenance -Action ExportInventory
         $sync.ProcessRunning | Should -BeFalse
         Should -Invoke Set-WinUtilTweaksProgressIndicator -Times 1 -ParameterFilter { $Percent -eq 100 }
+        Should -Invoke Restore-WPFMaintenanceWindow -Times 1 -Exactly
     }
 
     It 'queues completion without blocking the worker and refreshes task state before the dialog' {

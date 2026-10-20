@@ -4,7 +4,6 @@
 
 BeforeAll {
     $script:repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-    . (Join-Path $script:repoRoot "functions\private\Get-WinUtilInstalledAPPX.ps1")
     . (Join-Path $script:repoRoot "functions\private\Install-WinUtilAPPX.ps1")
     . (Join-Path $script:repoRoot "functions\private\Remove-WinUtilAPPX.ps1")
     . (Join-Path $script:repoRoot "functions\private\Remove-WinUtilProvisionedAPPX.ps1")
@@ -101,40 +100,6 @@ BeforeAll {
     }
 }
 
-Describe "Get-WinUtilInstalledAPPX" {
-    BeforeEach {
-        Mock Write-WinUtilLog { }
-        Mock powershell.exe {
-            $global:LASTEXITCODE = 0
-            @("Example.One", "Example.Two")
-        }
-    }
-
-    It "queries installed package names through Windows PowerShell" {
-        $result = Get-WinUtilInstalledAPPX
-
-        $result | Should -Be @("Example.One", "Example.Two")
-        Should -Invoke -CommandName powershell.exe -Times 1 -Exactly
-        Should -Invoke -CommandName Write-WinUtilLog -Times 0 -Exactly
-    }
-
-    It "logs query failures and returns no package names" {
-        Mock powershell.exe {
-            $global:LASTEXITCODE = 1
-            "AppX query failed"
-        }
-
-        $result = @(Get-WinUtilInstalledAPPX)
-
-        $result | Should -HaveCount 0
-        Should -Invoke -CommandName Write-WinUtilLog -Times 1 -Exactly -ParameterFilter {
-            $Level -eq "ERROR" -and
-                $Component -eq "AppX" -and
-                $Message -eq "Failed to get installed AppX packages: AppX query failed"
-        }
-    }
-}
-
 Describe "Install-WinUtilAPPX" {
     BeforeEach {
         Mock Write-WinUtilLog { }
@@ -217,7 +182,7 @@ Describe "Install-WinUtilAPPX" {
     }
 }
 
-Describe "Get installed AppX selection" {
+Describe "AppX button routing" {
     BeforeEach {
         $script:sync = [Hashtable]::Synchronized(@{
             ProcessRunning = $false
@@ -232,7 +197,6 @@ Describe "Get installed AppX selection" {
         })
 
         Mock Set-WinUtilTweaksProgressIndicator { }
-        Mock Get-WinUtilInstalledAPPX { @("Example.Package") }
         Mock Invoke-WPFAppxInstall { }
     }
 
@@ -240,13 +204,6 @@ Describe "Get installed AppX selection" {
         Remove-Variable -Name sync -Scope Script -ErrorAction SilentlyContinue
     }
 
-    It "selects configured packages returned by the compatibility-safe query" {
-        Invoke-WPFButton -Button "WPFGetInstalledAppx"
-
-        Should -Invoke -CommandName Get-WinUtilInstalledAPPX -Times 1 -Exactly
-        $script:sync.WPFAppxExample.IsChecked | Should -BeTrue
-        $script:sync.WPFAppxMissing.IsChecked | Should -BeFalse
-    }
 
     It "routes the install button to the AppX install workflow" {
         Invoke-WPFButton -Button "WPFInstallSelectedAppx"

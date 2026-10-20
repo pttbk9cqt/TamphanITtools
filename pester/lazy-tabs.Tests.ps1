@@ -23,6 +23,7 @@ Describe "Initialize-WinUtilTabContent" {
                 tweaks = [pscustomobject]@{}
                 appx = [pscustomobject]@{}
                 maintenance = [pscustomobject]@{}
+                update = [pscustomobject]@{}
             }
         })
 
@@ -37,8 +38,8 @@ Describe "Initialize-WinUtilTabContent" {
     }
 
     It "initializes the install tab once" {
-        Initialize-WinUtilTabContent -TabName "Install"
-        Initialize-WinUtilTabContent -TabName "Install"
+        Initialize-WinUtilTabContent -TabName "Application"
+        Initialize-WinUtilTabContent -TabName "Application"
 
 
         Should -Invoke -CommandName Initialize-WPFUI -Times 1 -Exactly -ParameterFilter {
@@ -47,7 +48,7 @@ Describe "Initialize-WinUtilTabContent" {
         Should -Invoke -CommandName Initialize-WPFUI -Times 1 -Exactly -ParameterFilter {
             $TargetGridName -eq "appspanel"
         }
-        $script:sync.InitializedTabs["Install"] | Should -BeTrue
+        $script:sync.InitializedTabs["Application"] | Should -BeTrue
     }
 
     It "re-applies checkbox selections after building a tab's controls" {
@@ -68,11 +69,16 @@ Describe "Initialize-WinUtilTabContent" {
     It "initializes deferred config-backed tabs once" {
         Initialize-WinUtilTabContent -TabName "Tweaks"
         Initialize-WinUtilTabContent -TabName "AppX"
+        Initialize-WinUtilTabContent -TabName "Update"
         Initialize-WinUtilTabContent -TabName "Maintenance"
         Initialize-WinUtilTabContent -TabName "Tweaks"
         Initialize-WinUtilTabContent -TabName "AppX"
         Initialize-WinUtilTabContent -TabName "Maintenance"
 
+        Initialize-WinUtilTabContent -TabName "Update"
+        Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
+            $targetGridName -eq "updatepanel" -and $columncount -eq 2
+        }
         Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
             $targetGridName -eq "tweakspanel" -and $columncount -eq 2
         }
@@ -82,9 +88,10 @@ Describe "Initialize-WinUtilTabContent" {
         Should -Invoke -CommandName Invoke-WPFUIElements -Times 1 -Exactly -ParameterFilter {
             $targetGridName -eq "maintenancepanel" -and $columncount -eq 2
         }
-        Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 3 -Exactly -ParameterFilter { $Refresh }
+        Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 4 -Exactly -ParameterFilter { $Refresh }
         Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 1 -Exactly -ParameterFilter { $Refresh -and $Name -eq 'WPFToggleMaintenanceTasks' }
         Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 1 -Exactly -ParameterFilter { $Refresh -and $Name -eq 'WPFToggleMaintenanceMonitor' }
+        Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 1 -Exactly -ParameterFilter { $Refresh -and $Name -eq 'WPFToggleMaintenanceWindowsUpdate' }
         Should -Invoke -CommandName Invoke-WPFMaintenanceToggle -Times 1 -Exactly -ParameterFilter { $Refresh -and $Name -eq 'WPFToggleWindowsUpdate' }
     }
 
@@ -121,7 +128,7 @@ Describe "Startup lazy tab wiring" {
         $mainScript = Get-Content -Path (Join-Path $script:repoRoot "scripts\main.ps1") -Raw
         $startupRegion = $mainScript.Substring(0, $mainScript.IndexOf("# Store Form Objects In PowerShell"))
 
-        $startupRegion | Should -Match 'Initialize-WinUtilTabContent -TabName "Install"'
+        $startupRegion | Should -Match 'Initialize-WinUtilTabContent -TabName "Application"'
         $startupRegion | Should -Not -Match 'targetGridName "tweakspanel"'
         $startupRegion | Should -Not -Match 'targetGridName "featurespanel"'
         $startupRegion | Should -Not -Match 'targetGridName "appxpanel"'

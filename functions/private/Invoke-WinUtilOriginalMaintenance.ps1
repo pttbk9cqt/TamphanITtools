@@ -60,7 +60,7 @@ function Invoke-WinUtilOriginalMaintenance {
         if (-not (Test-Path -LiteralPath "$root\IT-MAINTENANCE.ps1" -PathType Leaf) -or -not (Test-Path -LiteralPath "$root\VolumeInfo.json" -PathType Leaf)) {
             throw 'Disk monitoring script or volume configuration is missing.'
         }
-        return 'Verified IT-MAINTENANCE: 09:00 and 14:00 Monday-Friday. Original C:/D: monitoring and automatic D: hiding/restoration are installed.'
+        return 'Verified IT-MAINTENANCE: 09:00 and 14:00 Monday-Friday. C:/D:/E: monitoring and original automatic D: hiding/restoration are installed. E: is optional and warnings-only.'
     }
 
     $csvPath = Join-Path $root "$env:COMPUTERNAME.csv"

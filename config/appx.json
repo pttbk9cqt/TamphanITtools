@@ -47,14 +47,6 @@
     "PackageId": "Microsoft.MicrosoftOfficeHub",
     "StoreId": "9WZDNCRD29V9"
   },
-  "WPFAppxMicrosoft_ZuneMusic": {
-    "Category": "Utilities & Productivity",
-    "Content": "Media Player",
-    "Description": "Plays local audio and video files with modern playlist management and casting capabilities.",
-    "Panel": "0",
-    "PackageId": "Microsoft.ZuneMusic",
-    "StoreId": "9WZDNCRFJ3PT"
-  },
   "WPFAppxMicrosoft_BingSearch": {
     "Category": "Bing & Web Services",
     "Content": "Bing Search",
@@ -87,14 +79,6 @@
     "PackageId": "MicrosoftWindows.CrossDevice",
     "StoreId": "9NTXGKQ8P7N0"
   },
-  "WPFAppxMicrosoft_Todos": {
-    "Category": "Utilities & Productivity",
-    "Content": "To Do",
-    "Description": "Creates, tracks, and synchronizes personal tasks, smart lists, and daily reminders.",
-    "Panel": "0",
-    "PackageId": "Microsoft.Todos",
-    "StoreId": "9NBLGGH5R558"
-  },
   "WPFAppxMicrosoft_PowerAutomateDesktop": {
     "Category": "Developer Tools",
     "Content": "Power Automate",
@@ -111,14 +95,6 @@
     "PackageId": "Microsoft.YourPhone",
     "StoreId": "9NMPJ99VJBWV"
   },
-  "WPFAppxMicrosoft_MicrosoftStickyNotes": {
-    "Category": "Utilities & Productivity",
-    "Content": "Sticky Notes",
-    "Description": "Creates quick, floating text notes on the desktop that automatically sync across devices.",
-    "Panel": "0",
-    "PackageId": "Microsoft.MicrosoftStickyNotes",
-    "StoreId": "9NBLGGH4QGHW"
-  },
   "WPFAppxMicrosoft_WindowsSoundRecorder": {
     "Category": "Utilities & Productivity",
     "Content": "Sound Recorder",
@@ -127,14 +103,6 @@
     "PackageId": "Microsoft.WindowsSoundRecorder",
     "StoreId": "9WZDNCRFHWKN"
   },
-  "WPFAppxMicrosoft_WindowsAlarms": {
-    "Category": "Utilities & Productivity",
-    "Content": "Clock",
-    "Description": "Features world clocks, alarms, countdown timers, stopwatches, and dedicated focus session tracking.",
-    "Panel": "0",
-    "PackageId": "Microsoft.WindowsAlarms",
-    "StoreId": "9WZDNCRFJ3PR"
-  },
   "WPFAppxMicrosoft_Copilot": {
     "Category": "Bing & Web Services",
     "Content": "Copilot",
@@ -142,14 +110,6 @@
     "Panel": "1",
     "PackageId": "Microsoft.Copilot",
     "StoreId": "9NHT9RB2F4HD"
-  },
-  "WPFAppxMicrosoft_WindowsCamera": {
-    "Category": "Utilities & Productivity",
-    "Content": "Camera",
-    "Description": "Captures photographs and records video files via connected webcams or imaging hardware.",
-    "Panel": "0",
-    "PackageId": "Microsoft.WindowsCamera",
-    "StoreId": "9WZDNCRFJBBG"
   },
   "WPFAppxMicrosoft_BingNews": {
     "Category": "Bing & Web Services",

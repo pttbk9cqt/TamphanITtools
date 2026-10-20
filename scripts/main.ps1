@@ -98,7 +98,7 @@ Initialize-WinUtilTheme
 
 # Build only the default tab before first paint; other tabs initialize on first activation.
 $sync.InitializedTabs = @{}
-Initialize-WinUtilTabContent -TabName "Install"
+Initialize-WinUtilTabContent -TabName "Application"
 
 #===========================================================================
 # Store Form Objects In PowerShell
@@ -169,10 +169,12 @@ $commonKeyEvents = {
     if ($_.KeyboardDevice.Modifiers -eq "Alt") {
         $keyEventArgs = $_
         switch ($_.SystemKey) {
-            "I" { Invoke-WPFButton "WPFTab1BT"; $keyEventArgs.Handled = $true } # Navigate to Install tab and suppress Windows Warning Sound
-            "T" { Invoke-WPFButton "WPFTab2BT"; $keyEventArgs.Handled = $true } # Navigate to Tweaks tab
-            "M" { Invoke-WPFButton "WPFTab3BT"; $keyEventArgs.Handled = $true } # Navigate to Maintenance tab
-            "A" { Invoke-WPFButton "WPFTab4BT"; $keyEventArgs.Handled = $true } # Navigate to AppX tab
+            "I" { Invoke-WPFButton "WPFTab1BT"; $keyEventArgs.Handled = $true } # Navigate to Application tab and suppress Windows Warning Sound
+            "U" { Invoke-WPFButton "WPFTab2BT"; $keyEventArgs.Handled = $true } # Navigate to Update tab
+            "C" { Invoke-WPFButton "WPFTab3BT"; $keyEventArgs.Handled = $true } # Navigate to Activation tab
+            "T" { Invoke-WPFButton "WPFTab4BT"; $keyEventArgs.Handled = $true } # Navigate to Tweaks tab
+            "M" { Invoke-WPFButton "WPFTab5BT"; $keyEventArgs.Handled = $true } # Navigate to Maintenance tab
+            "A" { Invoke-WPFButton "WPFTab6BT"; $keyEventArgs.Handled = $true } # Navigate to AppX tab
         }
     }
     # Handle Ctrl key combinations for specific actions
@@ -240,14 +242,14 @@ $sync["Form"].Add_ContentRendered({
         Write-Host "Offline mode detected - Install tab disabled." -ForegroundColor Yellow
 
         # Optionally switch to a different tab if install tab was going to be default
-        Invoke-WPFTab "WPFTab2BT"  # Switch to Tweaks tab instead
+        Invoke-WPFTab "WPFTab4BT"  # Switch to Tweaks tab instead
     }
     else {
         # Online - ensure install tab is enabled
         $sync.WPFTab1BT.IsEnabled = $true
         $sync.WPFTab1BT.Opacity = 1.0
         $sync.WPFTab1BT.ToolTip = $null
-        Invoke-WPFTab "WPFTab1BT"  # Default to install tab
+        Invoke-WPFTab "WPFTab1BT"  # Default to Application tab
     }
 
     $sync["Form"].Focus()

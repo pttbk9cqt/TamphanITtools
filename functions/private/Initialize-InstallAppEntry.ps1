@@ -21,7 +21,7 @@ function Initialize-InstallAppEntry {
         $border.Tag = $appKey
         $border.ToolTip = Get-WinUtilEntryToolTip -Description $app.description -Key $appKey
         $border.Add_MouseLeftButtonUp({
-            # Resolve through $sync because the border's child is a layout Grid for FOSS entries
+            # Resolve the entry checkbox through shared state
             $childCheckbox = $sync.$($this.Tag)
             $childCheckbox.IsChecked = -not $childCheckbox.IsChecked
         })
@@ -101,15 +101,6 @@ function Initialize-InstallAppEntry {
         $entryLayout = New-Object Windows.Controls.Grid
         [void]$entryLayout.Children.Add($checkBox)
 
-        # Mark FOSS apps with a corner badge, bled into the border padding so it sits on the edge
-        if ($app.foss -eq $true) {
-            $fossBadge = New-WinUtilFossBadge
-            $fossBadge.HorizontalAlignment = "Right"
-            $fossBadge.VerticalAlignment = "Top"
-            $fossBadge.Margin = New-Object Windows.Thickness(0, -4, -6, 0)
-
-            [void]$entryLayout.Children.Add($fossBadge)
-        }
         $border.Child = $entryLayout
         if ($sync.selectedApps -contains $appKey) {
             $checkBox.IsChecked = $true

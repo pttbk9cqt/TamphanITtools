@@ -65,6 +65,6 @@ function Invoke-WPFUpdatesdisable {
     Write-Host "--- Windows Update Is Disabled ---" -ForegroundColor Green
     Write-Host "=================================" -ForegroundColor Green
 
-    Write-Host "Note: You must restart your system in order for all changes to take effect." -ForegroundColor Yellow
-    Write-WinUtilLog -Component "Updates" -Message "Windows Update disable workflow completed. Restart required."
+    Write-Host "Windows Update settings applied." -ForegroundColor Green
+    Write-WinUtilLog -Component "Updates" -Message "Windows Update disable workflow completed. Settings applied."
 }

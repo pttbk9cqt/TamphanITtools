@@ -1,0 +1,29 @@
+{
+  "WPFOpenWindowsUpdate": {
+    "Content": "Open Windows Update Settings",
+    "Description": "Open Windows Settings at Windows Update. This does not start an update or change settings.",
+    "Category": "Windows Update",
+    "Panel": "1",
+    "Type": "Button",
+    "ButtonWidth": "350",
+    "Order": 1
+  },
+  "WPFOpenStoreDownloads": {
+    "Content": "Microsoft Store - Downloads",
+    "Description": "Open Microsoft Store directly at Updates and downloads. This does not start downloads automatically.",
+    "Category": "Microsoft Store",
+    "Panel": "2",
+    "Type": "Button",
+    "ButtonWidth": "350",
+    "Order": 2
+  },
+  "WPFToggleWindowsUpdate": {
+    "Content": "Windows Update",
+    "Description": "On: restore Windows Update defaults. Off: disable Windows Update. Changes are applied when the operation completes.",
+    "Category": "Windows Update",
+    "Panel": "1",
+    "Type": "MaintenanceToggle",
+    "Order": 3,
+    "Status": "WindowsUpdate"
+  }
+}

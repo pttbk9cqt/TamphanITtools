@@ -44,7 +44,7 @@ Describe "Install app rendering startup contract" {
 
         try {
             $global:sync = [Hashtable]::Synchronized(@{})
-            $global:sync.currentTab = "Install"
+            $global:sync.currentTab = "Application"
             $global:sync.Form = [pscustomobject]@{ Dispatcher = [System.Windows.Threading.Dispatcher]::CurrentDispatcher }
             $global:sync.InstallAppRenderQueue = [System.Collections.Queue]::new()
 

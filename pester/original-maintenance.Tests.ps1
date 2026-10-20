@@ -59,9 +59,9 @@ Describe 'Original maintenance files' {
             'WPFToggleMaintenanceTasks',
             'WPFToggleMaintenanceMonitor',
             'WPFMaintenanceExportInventory',
-            'WPFToggleWindowsUpdate',
+            'WPFToggleMaintenanceWindowsUpdate',
             'WPFMaintenanceTaskScheduler',
-            'WPFFixesWinget'
+            'WPFMaintenanceRestartExplorer'
         )
         @($controls | ForEach-Object { $_.Value.Order }) | Should -Be @(1,2,3,4,5,6)
     }

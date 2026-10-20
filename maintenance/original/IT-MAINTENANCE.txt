@@ -568,6 +568,25 @@ QUAN TRI VIEN
     # Đọc cấu hình
     # =================================================================
 
+    # E: is optional and warnings-only. Never hide it or pass it to DiskPart.
+    $EVolume = Get-CimInstance Win32_Volume -Filter "DriveLetter='E:'"
+    if ($null -ne $EVolume) {
+        $EDiskInfo = Get-ITDiskInfo -Volume $EVolume
+        if ($null -eq $EDiskInfo) {
+            Write-ITLog "LOI E" "KHONG DOC DUOC DUNG LUONG O E:."
+        } else {
+            Write-ITLog "THONG TIN E" "O=E: | TONG=$($EDiskInfo.TotalGB) GB | DA DUNG=$($EDiskInfo.UsedGB) GB | CON TRONG=$($EDiskInfo.FreeGB) GB"
+            if ($EDiskInfo.FreeGB -le $WarningGB) {
+                $ESeverity = if ($EDiskInfo.FreeGB -lt $HideGB) { "NGHIEM TRONG" } else { "CANH BAO" }
+                Write-ITLog "$ESeverity E" "O E: SAP DAY. CON TRONG=$($EDiskInfo.FreeGB) GB. CHI CANH BAO, KHONG AN O E:."
+                $EMessage = "THONG BAO IT-MAINTENANCE`n`nO DIA E: SAP DAY!`n`nTONG: $($EDiskInfo.TotalGB) GB`nDA DUNG: $($EDiskInfo.UsedGB) GB`nCON TRONG: $($EDiskInfo.FreeGB) GB`n`nVUI LONG DON DEP DU LIEU KHONG CAN THIET.`nHE THONG CHI CANH BAO, KHONG AN O E:, KHONG DISKPART, KHONG TU DONG XOA DU LIEU."
+                [void](Show-UserMessage -Message $EMessage)
+            }
+        }
+    } else {
+        Write-ITLog "THONG TIN E" "KHONG CO O E:. BO QUA GIAM SAT E:."
+    }
+
     if (-not (Test-Path $ConfigFile)) {
 
         throw "KHONG TIM THAY VOLUMEINFO.JSON."
@@ -1402,7 +1421,7 @@ Register-ScheduledTask `
     -Trigger $Trigger10,$Trigger14 `
     -Principal $TaskPrincipal `
     -Settings $TaskSettings `
-    -Description "IT-MAINTENANCE - GIAM SAT C: VA D: - C: CHI CANH BAO, KHONG AN/DISKPART - D: >=20 GB DEN <=30 GB CANH BAO - D: <20 GB CANH BAO VA CHO 60 PHUT - NEU VAN <20 GB THI AN D: - TU DONG HIEN LAI D: KHI >=20 GB - CHI KIEM TRA O CUNG KHI CA C: VA D: DEU >30 GB - CHAY 09:00 VA 14:00 TU THU 2 DEN THU 6." |
+    -Description "IT-MAINTENANCE - GIAM SAT C: VA D: VA E: - E: NEU CO, CHI CANH BAO, KHONG AN/DISKPART - C: CHI CANH BAO, KHONG AN/DISKPART - D: >=20 GB DEN <=30 GB CANH BAO - D: <20 GB CANH BAO VA CHO 60 PHUT - NEU VAN <20 GB THI AN D: - TU DONG HIEN LAI D: KHI >=20 GB - CHI KIEM TRA O CUNG KHI CA C: VA D: DEU >30 GB - CHAY 09:00 VA 14:00 TU THU 2 DEN THU 6." |
     Out-Null
 
 
@@ -1444,6 +1463,7 @@ Write-Host "------------------------------------------------------------"
 Write-Host ""
 Write-Host "QUY TAC:"
 Write-Host ""
+Write-Host "   O E: NEU CO, CANH BAO KHI <=30 GB. KHONG AN, KHONG DISKPART."
 Write-Host "   O C: CHI GIAM SAT VA CANH BAO:"
 Write-Host "      >30 GB              : BINH THUONG"
 Write-Host "      >=20 GB DEN <=30 GB : CANH BAO SAP DAY"

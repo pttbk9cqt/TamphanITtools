@@ -4,10 +4,10 @@ function Invoke-WPFGetInstalled {
         Invokes the function that gets the checkboxes to check in a new runspace
 
     .PARAMETER checkbox
-        Indicates whether to check for installed 'winget' programs or applied 'tweaks'
+        Checks installed applications using the selected package manager
 
     #>
-    param($checkbox)
+    param([ValidateSet("winget")][string]$checkbox = "winget")
     if ($sync.ProcessRunning) {
         $msg = "[Invoke-WPFGetInstalled] Install process is currently running."
         [System.Windows.MessageBox]::Show($msg, "Winutil", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
@@ -41,10 +41,6 @@ function Invoke-WPFGetInstalled {
                     }
                 }
                 Reset-WPFCheckBoxes -checkboxfilterpattern "WPFInstall*"
-            } else {
-                foreach ($checkboxName in $completedOperation.Checkboxes) {
-                    $sync.$checkboxName.ischecked = $True
-                }
             }
         } finally {
             $sync.ProcessRunning = $false
@@ -73,8 +69,6 @@ function Invoke-WPFGetInstalled {
                         "Choco" { $operation.Checkboxes = @(Invoke-WinUtilCurrentSystem -CheckBox "choco"); break }
                         "Winget" { $operation.Checkboxes = @(Invoke-WinUtilCurrentSystem -CheckBox $checkbox); break }
                     }
-                } elseif ($checkbox -eq "tweaks") {
-                    $operation.Checkboxes = @(Invoke-WinUtilCurrentSystem -CheckBox $checkbox)
                 }
             } catch {
                 $operation.Error = $_.Exception.Message

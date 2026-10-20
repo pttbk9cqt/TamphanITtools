@@ -12,6 +12,7 @@ WinUtil is a Windows PowerShell utility with a WPF interface. The repository is 
 
 - Language: Windows PowerShell / PowerShell.
 - UI: WPF via `xaml/inputXML.xaml`.
+- Selection UI: Application has no selected-app popup; Tweaks uses All/Clear without applying immediate toggles; AppX uses Select All/Clear Selection. Maintenance completion restores its tab and window focus; Explorer restart runs in the background and targets the current Windows session.
 - Configuration: JSON files under `config/`.
 - Tests: Pester tests under `pester/`.
 - Lint: PowerShell Script Analyzer with settings in `lint/PSScriptAnalyser.ps1`.
@@ -20,6 +21,8 @@ WinUtil is a Windows PowerShell utility with a WPF interface. The repository is 
 ### Repository Layout
 
 - `Compile.ps1`: build script that creates `winutil.ps1`.
+- `TamphanITtools.cmd`: standalone Windows PowerShell launcher with explicit online and offline modes.
+- `Build-Portable.ps1`: compiles and packages local release assets into ignored `binary/`; never publishes them.
 - `scripts/start.ps1`: startup/bootstrap segment used at the beginning of the compiled script.
 - `scripts/main.ps1`: main entrypoint appended at the end of the compiled script.
 - `functions/public/`: public/UI-facing PowerShell functions.
@@ -69,6 +72,8 @@ Because the final script is concatenated, code cannot rely on runtime module imp
 - Shared mutable state is stored in `$sync`, including configs, UI element references, runspace state, selections, and progress.
 - Long-running operations use runspaces or existing async patterns so the UI remains responsive.
 - UI updates from background work are dispatched back to the WPF UI thread.
+- Windows Update changes and service-state queries, including initial refresh, run in the background. A UI-runspace completion delegate is queued with Dispatcher.BeginInvoke; it applies the returned state and releases the busy flag before displaying errors. Workers never synchronously dispatch status queries or dialogs.
+- Clicking Activation (or Alt+C) launches `irm https://get.activated.win | iex` through a hidden Windows PowerShell bootstrap that opens the external MAS menu, without an inner launch button. Only explicit navigation through `Invoke-WPFButton` launches MAS; tab initialization does not. It does not wait on the WPF thread, choose an activation method, or report activation success. The bootstrap console is hidden, has no custom title or -NoExit flag, and closes when its command finishes; the interactive MAS menu retains its own lifecycle. WinUtil records only process launch status in its session log.
 - Declarative features such as apps, tweaks, presets, DNS providers, and navigation stay in `config/*.json` unless code is required.
 
 ## UI And Event Contract
@@ -76,20 +81,22 @@ Because the final script is concatenated, code cannot rely on runtime module imp
 - UI layout lives in `xaml/inputXML.xaml`.
 - Named WPF controls are discovered and stored in `$sync`.
 - Button/action wiring follows a naming convention: an element named like `WPFThingButton` maps to a function named like `Invoke-WPFThingButton`.
-- Main navigation contains Install, Tweaks, Maintenance, and AppX Removal (Alt+A). Maintenance groups its task switches, report button, Windows Update switch, Task Scheduler viewer, and WinGet reinstall in one compact panel, with all fourteen Legacy Windows Panels shortcuts in a second column. Config, optional Features, other Fixes, PowerShell Profile, and Remote Access controls have been removed. AppX has its own navigation button; there is no AppX shortcut in Tweaks. Calculator, Notepad, Paint, Photos, and Snipping Tool are excluded from the AppX catalog and presets. Tab numbers follow this order, with AppX last. The Settings menu, search bar, and category filter chips are removed; command-line `-Config` imports remain supported through `Import-WinUtilConfig`. Legacy Windows Panels centers its heading and shortcut buttons within its own column.
+- Main navigation contains Application (Alt+I), Update (Alt+U), Activation (Alt+C), Tweaks, Maintenance, and AppX Removal (Alt+A). Maintenance groups its task switches, report button, synchronized Windows Update switch, and Task Scheduler viewer in one compact panel, with all fourteen Legacy Windows Panels shortcuts in a second column. WinGet reinstall lives in a separate Package Management panel below both. Config, optional Features, other Fixes, PowerShell Profile, and Remote Access controls have been removed. AppX has its own navigation button; there is no AppX shortcut in Tweaks. Calculator, Notepad, Paint, Photos, Snipping Tool, Camera, Media Player, Sticky Notes, Clock, and To Do are excluded from the AppX catalog and presets. Tab numbers follow this order, with AppX last. The Settings menu, search bar, and category filter chips are removed; command-line `-Config` imports remain supported through `Import-WinUtilConfig`. Legacy Windows Panels centers its heading and shortcut buttons within its own column.
 
 ## Configuration Contract
 
 - Config files must remain valid JSON and compile cleanly through `ConvertFrom-Json`.
 - `config/applications.json` defines installable applications; each entry includes the fields expected by tests and UI code, such as package manager IDs, category, display content, description, and link.
+- `config/update.json` defines shortcuts to Windows Update Settings (`ms-settings:windowsupdate`) and Store Downloads (`ms-windows-store://downloadsandupdates`), plus a Windows Update state switch synchronized with its Maintenance twin. The Update content is capped at 800 units (double its previous 400) and split into two responsive columns. Opening Update only reads switch state and never applies changes.
 - `config/tweaks.json` defines Windows tweaks; registry and service changes include original values or original states when applicable so undo workflows can restore user systems.
 - Preset and navigation files reference valid config keys. Renaming a config key requires updating all presets, UI references, docs, and code paths together.
-- `config/maintenance.json` defines two columns: a compact ordered IT-MAINTENANCE panel with WinGet reinstall, and Legacy Windows Panels. The maintenance workflows include switches that create/remove the original daily shutdown and cleanup tasks, create/remove the original C:/D: monitoring task, and enable/disable Windows Update, plus a button that exports software/DxDiag reports immediately. Buttons dispatch through their maintenance `Action`, existing `function`, or `InvokeScript` metadata. Retired feature keys are rejected by strict imports and reported as skipped in legacy imports. Switches refresh from actual system state after each operation. Removing a task keeps installed files and reports. The UI confirms the original cleanup and D: hiding behavior and uses the shared runspace pool. Original files are deployed under protected `C:\IT-MAINTENANCE` with backups; no account setup or restart is required for report export.
+- `config/maintenance.json` defines two columns: a compact ordered IT-MAINTENANCE panel with closely spaced switch labels and controls, and Legacy Windows Panels. The maintenance workflows include switches that create/remove the original daily shutdown and cleanup tasks, create/remove the C:/D:/E: monitoring task, plus a button that exports software/DxDiag reports immediately. Buttons dispatch through their maintenance `Action`, existing `function`, or `InvokeScript` metadata. Retired feature keys are rejected by strict imports and reported as skipped in legacy imports. Switches refresh from actual system state after each operation. Removing a task keeps installed files and reports. The maintained monitor extends the original payload with optional warnings-only E: checks (30 GB warning, below 20 GB critical), without hiding E: or changing the original C:/D: disk optimization and D: hiding/restoration behavior. Reinstall the monitoring task to deploy this extension on existing machines. The UI confirms the original cleanup and D: hiding behavior and uses the shared runspace pool. Original files are deployed under protected `C:\IT-MAINTENANCE` with backups; no account setup or restart is required for report export.
 
 ## Safety Requirements
 
 - Registry, service, package manager, Windows Update, and AppX removal operations affect the host system and are treated as high-risk.
 - Tweak changes include undo metadata when the schema supports it, so changes stay reversible.
+- Windows Update switch completion reports applied configuration, not an unconditional restart requirement. A restart requested by Windows after installing updates is separate.
 
 ## Project Documentation
 
@@ -106,3 +113,9 @@ README.md covers usage and SPEC.md records the architecture and build contract. 
 ## Release Artifact
 
 GitHub Actions is responsible for producing the release `winutil.ps1` from repository sources. A release is considered valid only if the generated script came from the compile process, not from direct manual edits to `winutil.ps1`.
+
+For this fork, `Build-Portable.ps1` also prepares local assets for manual upload: `winutil.ps1`, its plain 64-character SHA-256 file `winutil.ps1.sha256`, `TamphanITtools.cmd`, and `TamphanITtools-portable.zip`. The ZIP contains the launcher, script, and checksum. These outputs remain ignored. No release or workflow is changed by packaging.
+
+The launcher downloads the script and checksum from `https://github.com/pttbk9cqt/TamphanITtools/releases/latest/download`, validates the checksum and PowerShell syntax, and requests UAC through Windows PowerShell 5.1 with `-File`. Downloads use a per-invocation GUID temporary directory retained until the elevated process exits, then cleaned up. Failure or cancelled UAC does not start a fallback or change system execution policy. The checksum provides download consistency, not publisher authentication.
+
+Explicit `offline` mode runs the adjacent script with `-Offline`, without fetching anything. Neither launch mode passes presets or automatically starts system changes. When the compiled script must relaunch an in-memory invocation, it uses this fork's stable release URL, not the upstream repository. A stable public release with both required assets is necessary for online mode; a source-only release or prerelease is insufficient.

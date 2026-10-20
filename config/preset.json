@@ -30,29 +30,9 @@
     "WPFTweaksDeliveryOptimization",
     "WPFTweaksDeleteTempFiles",
     "WPFTweaksDisableStoreSearch",
-    "WPFTweaksRevertStartMenu",
     "WPFTweaksWidget",
     "WPFTweaksRemoveOneDrive",
     "WPFTweaksWindowsAI",
     "WPFTweaksRightClickMenu"
-  ],
-  "AppxDefault": [
-    "WPFAppxMicrosoft_WindowsFeedbackHub",
-    "WPFAppxMicrosoft_GetHelp",
-    "WPFAppxMicrosoft_MicrosoftOfficeHub",
-    "WPFAppxClipchamp_Clipchamp",
-    "WPFAppxMicrosoft_WindowsAlarms",
-    "WPFAppxMicrosoftCorporationII_QuickAssist",
-    "WPFAppxMicrosoft_WindowsSoundRecorder",
-    "WPFAppxMicrosoft_MicrosoftStickyNotes",
-    "WPFAppxMicrosoft_Todos",
-    "WPFAppxMicrosoft_MicrosoftSolitaireCollection",
-    "WPFAppxMicrosoft_PowerAutomateDesktop",
-    "WPFAppxMicrosoft_WindowsDevHome",
-    "WPFAppxMicrosoft_BingWeather",
-    "WPFAppxMicrosoft_StartExperiencesApp",
-    "WPFAppxMicrosoft_BingNews",
-    "WPFAppxMicrosoft_Copilot",
-    "WPFAppxMicrosoft_BingSearch"
   ]
 }

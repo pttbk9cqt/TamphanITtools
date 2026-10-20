@@ -1,11 +1,3 @@
-<#
-.NOTES
-    Author         : Chris Titus @christitustech
-    Runspace Author: @DeveloperDurp
-    GitHub         : https://github.com/ChrisTitusTech
-    Version        : #{replaceme}
-#>
-
 param (
     [string]$Config,
     [ValidateSet("Standard", "Minimal", "Advanced", "")]
@@ -33,23 +25,24 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
         } elseif ($_.Value -is [array]) {
             "-$($_.Key) $($_.Value -join ',')"
         } elseif ($_.Value) {
-            "-$($_.Key) '$($_.Value)'"
+            "-$($_.Key) '$([string]$_.Value -replace "'", "''")'"
         }
     }
 
     $script = if ($PSCommandPath) {
-        "& { & `'$($PSCommandPath)`' $($argList -join ' ') }"
+        "& { & '$($PSCommandPath -replace "'", "''")' $($argList -join ' ') }"
     } else {
-        "&([ScriptBlock]::Create((irm https://github.com/ChrisTitusTech/winutil/releases/latest/download/winutil.ps1))) $($argList -join ' ')"
+        "&([ScriptBlock]::Create((irm https://github.com/pttbk9cqt/TamphanITtools/releases/latest/download/winutil.ps1))) $($argList -join ' ')"
     }
 
     $powershellCmd = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } else { "powershell" }
     $processCmd = if (Get-Command wt.exe -ErrorAction SilentlyContinue) { "wt.exe" } else { "$powershellCmd" }
 
+    $encodedScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
     if ($processCmd -eq "wt.exe") {
-        Start-Process $processCmd -ArgumentList "$powershellCmd -ExecutionPolicy Bypass -NoProfile -Command `"$script`"" -Verb RunAs
+        Start-Process $processCmd -ArgumentList "$powershellCmd -ExecutionPolicy Bypass -NoProfile -EncodedCommand $encodedScript" -Verb RunAs
     } else {
-        Start-Process $processCmd -ArgumentList "-ExecutionPolicy Bypass -NoProfile -Command `"$script`"" -Verb RunAs
+        Start-Process $processCmd -ArgumentList "-ExecutionPolicy Bypass -NoProfile -EncodedCommand $encodedScript" -Verb RunAs
     }
 
     break
@@ -66,7 +59,7 @@ $sync.selectedAppx = [System.Collections.Generic.List[string]]::new()
 $sync.selectedApps = [System.Collections.Generic.List[string]]::new()
 $sync.selectedTweaks = [System.Collections.Generic.List[string]]::new()
 $sync.selectedToggles = [System.Collections.Generic.List[string]]::new()
-$sync.currentTab = "Install"
+$sync.currentTab = "Application"
 
 $dateTime = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $winutildir = "$env:LocalAppData\winutil"

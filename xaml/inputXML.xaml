@@ -985,7 +985,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -1009,12 +1008,20 @@
                     Background="{DynamicResource ButtonInstallBackgroundColor}" Foreground="white" FontWeight="Bold" Name="WPFTab1BT">
                     <ToggleButton.Content>
                         <TextBlock FontSize="{DynamicResource TabButtonFontSize}" Background="Transparent" Foreground="{DynamicResource ButtonInstallForegroundColor}" >
-                            <Underline>I</Underline>nstall
+                            Appl<Underline>i</Underline>cation
                         </TextBlock>
                     </ToggleButton.Content>
                 </ToggleButton>
+                <ToggleButton Style="{StaticResource TabToggleButton}" Margin="0,0,5,0" Height="{DynamicResource TabButtonHeight}" Width="100"
+                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab2BT">
+                    <TextBlock FontSize="{DynamicResource TabButtonFontSize}" Foreground="{DynamicResource ButtonConfigForegroundColor}"><Underline>U</Underline>pdate</TextBlock>
+                </ToggleButton>
+                <ToggleButton Style="{StaticResource TabToggleButton}" Margin="0,0,5,0" Height="{DynamicResource TabButtonHeight}" Width="125"
+                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab3BT">
+                    <TextBlock FontSize="{DynamicResource TabButtonFontSize}" Foreground="{DynamicResource ButtonConfigForegroundColor}">A<Underline>c</Underline>tivation</TextBlock>
+                </ToggleButton>
                 <ToggleButton Style="{StaticResource TabToggleButton}" Margin="0,0,5,0" Height="{DynamicResource TabButtonHeight}" Width="{DynamicResource TabButtonWidth}"
-                    Background="{DynamicResource ButtonTweaksBackgroundColor}" Foreground="{DynamicResource ButtonTweaksForegroundColor}" FontWeight="Bold" Name="WPFTab2BT">
+                    Background="{DynamicResource ButtonTweaksBackgroundColor}" Foreground="{DynamicResource ButtonTweaksForegroundColor}" FontWeight="Bold" Name="WPFTab4BT">
                     <ToggleButton.Content>
                         <TextBlock FontSize="{DynamicResource TabButtonFontSize}" Background="Transparent" Foreground="{DynamicResource ButtonTweaksForegroundColor}">
                             <Underline>T</Underline>weaks
@@ -1022,13 +1029,13 @@
                     </ToggleButton.Content>
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource TabToggleButton}" Margin="0,0,5,0" Height="{DynamicResource TabButtonHeight}" Width="125"
-                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab3BT">
+                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab5BT">
                     <TextBlock FontSize="{DynamicResource TabButtonFontSize}" Background="Transparent" Foreground="{DynamicResource ButtonConfigForegroundColor}">
                         <Underline>M</Underline>aintenance
                     </TextBlock>
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource TabToggleButton}" Margin="0,0,5,0" Height="{DynamicResource TabButtonHeight}" Width="125"
-                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab4BT">
+                    Background="{DynamicResource ButtonConfigBackgroundColor}" Foreground="{DynamicResource ButtonConfigForegroundColor}" FontWeight="Bold" Name="WPFTab6BT">
                     <TextBlock FontSize="{DynamicResource TabButtonFontSize}" Background="Transparent" Foreground="{DynamicResource ButtonConfigForegroundColor}">
                         <Underline>A</Underline>ppX Removal
                     </TextBlock>
@@ -1100,7 +1107,7 @@
         </Grid>
 
         <TabControl Name="WPFTabNav" Background="Transparent" Width="Auto" Height="Auto" BorderBrush="Transparent" BorderThickness="0" Grid.Row="2" Grid.Column="0" Padding="-1">
-            <TabItem Header="Install" Visibility="Collapsed" Name="WPFTab1">
+            <TabItem Header="Application" Visibility="Collapsed" Name="WPFTab1">
                 <Grid Background="Transparent" >
                     <Grid Margin="{DynamicResource TabContentMargin}">
                         <Grid.ColumnDefinitions>
@@ -1116,7 +1123,24 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem Header="Tweaks" Visibility="Collapsed" Name="WPFTab2">
+            <TabItem Header="Update" Visibility="Collapsed" Name="WPFTab2">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="{DynamicResource TabContentMargin}">
+                    <StackPanel MaxWidth="800" HorizontalAlignment="Stretch">
+                        <TextBlock Text="Update" FontSize="24" FontWeight="Bold" Margin="15,10,15,5"/>
+                        <TextBlock Text="Manage Windows Update and open Microsoft Store downloads." TextWrapping="Wrap" Margin="15,0,15,16"/>
+                        <Grid Name="updatepanel" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Activation" Visibility="Collapsed" Name="WPFTab3">
+                <Grid Margin="{DynamicResource TabContentMargin}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="600">
+                        <TextBlock Text="Activation" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                        <TextBlock Text="Selecting Activation opens Microsoft Activation Scripts directly in a separate PowerShell console. Internet access is required. Remote code runs with WinUtil's administrator rights; choose any further action in that console. Select Activation again to reopen it." TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,20"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Tweaks" Visibility="Collapsed" Name="WPFTab4">
                 <Grid>
                     <!-- Main content area with a ScrollViewer -->
                     <Grid.RowDefinitions>
@@ -1129,17 +1153,13 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <StackPanel Background="{DynamicResource MainBackgroundColor}" Orientation="Vertical" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
-                                <Label Content="Recommended Selections:" FontSize="{DynamicResource FontSize}" VerticalAlignment="Center" Margin="2"/>
+                                <Label Content="Selections:" FontSize="{DynamicResource FontSize}" VerticalAlignment="Center" Margin="2"/>
                                 <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,2,0,0">
-                                    <Button Name="WPFstandard" Content=" Standard " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
-                                    <Button Name="WPFminimal" Content=" Minimal " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
-                                    <Button Name="WPFAdvanced" Content=" Advanced " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
+                                    <Button Name="WPFSelectAllTweaks" Content=" All " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
                                     <Button Name="WPFClearTweaksSelection" Content=" Clear " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
-                                    <Button Name="WPFGetInstalledTweaks" Content=" Get Installed Tweaks " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
                                 </WrapPanel>
                             </StackPanel>
 
@@ -1147,14 +1167,6 @@
                                 <!-- Your tweakspanel content goes here -->
                             </Grid>
 
-                            <Border Grid.ColumnSpan="2" Grid.Row="2" Grid.Column="0" Style="{StaticResource BorderStyle}">
-                                <StackPanel Background="{DynamicResource MainBackgroundColor}" Orientation="Horizontal" HorizontalAlignment="Left">
-                                    <TextBlock Padding="10">
-                                        Note: Hover over items to get a better description. Please be careful as many of these tweaks will heavily modify your system.
-                                        <LineBreak/>Recommended selections are for normal users and if you are unsure do NOT check anything else!
-                                    </TextBlock>
-                                </StackPanel>
-                            </Border>
                         </Grid>
                     </ScrollViewer>
                     <Border Grid.Row="1" Background="{DynamicResource MainBackgroundColor}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="5" HorizontalAlignment="Stretch" Padding="10">
@@ -1165,17 +1177,24 @@
                     </Border>
                 </Grid>
             </TabItem>
-            <TabItem Header="Maintenance" Visibility="Collapsed" Name="WPFTab3">
+            <TabItem Header="Maintenance" Visibility="Collapsed" Name="WPFTab5">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="{DynamicResource TabContentMargin}">
                     <StackPanel>
                         <TextBlock Text="Computer Maintenance" FontSize="{DynamicResource HeaderFontSize}" FontWeight="Bold" Margin="15,10,15,5"/>
                         <TextBlock Text="Use the switches to create or remove schedules; export reports with the button. Original files stay in C:\IT-MAINTENANCE. Run as administrator; no copy/paste or PowerShell ISE is needed."
                             TextWrapping="Wrap" Margin="15,0,15,10"/>
-                        <Grid Name="maintenancepanel" Background="Transparent" Width="880" HorizontalAlignment="Left"/>
+                        <Grid Name="maintenancepanel" Background="Transparent" MaxWidth="1100" HorizontalAlignment="Stretch"/>
+                        <Border Style="{StaticResource BorderStyle}" Margin="5,16,5,5">
+                            <StackPanel Margin="12">
+                                <TextBlock Text="Package Management" FontSize="{DynamicResource HeaderFontSize}" Margin="0,0,0,10"/>
+                                <Button Name="WPFFixesWinget" Content="WinGet - Reinstall" Width="350" Height="{DynamicResource ButtonHeight}" HorizontalAlignment="Left"
+                                    ToolTip="Repair the WinGet package manager installation."/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
-            <TabItem Header="AppX" Visibility="Collapsed" Name="WPFTab4">
+            <TabItem Header="AppX" Visibility="Collapsed" Name="WPFTab6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -1187,14 +1206,11 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <StackPanel Background="{DynamicResource MainBackgroundColor}" Orientation="Vertical" Grid.Row="0" Grid.Column="0" Margin="5">
                                 <Label Content="Selections:" FontSize="{DynamicResource FontSize}" VerticalAlignment="Center" Margin="2"/>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,2,0,0">
-                                    <Button Name="WPFDefaultAppxSelection" Content=" Default " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
-                                    <Button Name="WPFGetInstalledAppx" Content=" Get Installed " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
                                     <Button Name="WPFSelectAllAppx" Content=" Select All " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
                                     <Button Name="WPFClearAppxSelection" Content=" Clear Selection " Margin="2" Width="{DynamicResource ButtonWidth}" Height="{DynamicResource ButtonHeight}"/>
                                 </StackPanel>
@@ -1203,15 +1219,6 @@
                             <Grid Name="appxpanel" Grid.Row="1">
                             </Grid>
 
-                            <Border Grid.Row="2" Style="{StaticResource BorderStyle}" Margin="5,15,5,5">
-                                <StackPanel Background="{DynamicResource MainBackgroundColor}" Orientation="Horizontal" HorizontalAlignment="Left">
-                                    <TextBlock Padding="10" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}">
-                                        Note: Select the Windows AppX packages you wish to install or remove.
-                                        <LineBreak/>Install Selected registers a local manifest when available, then falls back to the Microsoft Store.
-                                        <LineBreak/>Remove Selected removes packages for the current user and all new user profiles.
-                                    </TextBlock>
-                                </StackPanel>
-                            </Border>
                         </Grid>
                     </ScrollViewer>
 

@@ -20,8 +20,8 @@
     "Action": "ExportInventory"
   },
   "WPFToggleMaintenanceMonitor": {
-    "Content": "C:/D: disk monitoring",
-    "Description": "On: install and verify IT-MAINTENANCE at 09:00 and 14:00 Monday-Friday. Off: stop any running instance and delete the task. Installed scripts and volume configuration are retained.",
+    "Content": "C:/D:/E: disk monitoring",
+    "Description": "On: install and verify IT-MAINTENANCE at 09:00 and 14:00 Monday-Friday. Off: stop any running instance and delete the task. C: and E: warn when low; original automatic D: hiding/restoration is retained. Installed scripts and volume configuration are retained.",
     "Category": "IT-MAINTENANCE",
     "Panel": "1",
     "Type": "MaintenanceToggle",
@@ -30,9 +30,9 @@
     "ActionOn": "InstallMonitor",
     "ActionOff": "RemoveMonitor"
   },
-  "WPFToggleWindowsUpdate": {
+  "WPFToggleMaintenanceWindowsUpdate": {
     "Content": "Windows Update",
-    "Description": "On: restore Windows Update defaults. Off: disable Windows Update. Restart Windows after changing this setting.",
+    "Description": "On: restore Windows Update defaults. Off: disable Windows Update. Changes are applied when the operation completes.",
     "Category": "IT-MAINTENANCE",
     "Panel": "1",
     "Type": "MaintenanceToggle",
@@ -48,15 +48,14 @@
     "Order": 5,
     "Action": "Tasks"
   },
-  "WPFFixesWinget": {
-    "Content": "WinGet - Reinstall",
-    "category": "IT-MAINTENANCE",
-    "panel": "1",
+  "WPFMaintenanceRestartExplorer": {
+    "Content": "Restart Explorer",
+    "Description": "Restart Windows Explorer in this session. The taskbar and open File Explorer windows briefly close.",
+    "Category": "IT-MAINTENANCE",
+    "Panel": "1",
     "Type": "Button",
-    "ButtonWidth": "300",
     "Order": 6,
-    "function": "Invoke-WPFFixesWinget",
-    "link": "https://winutil.christitus.com/code-reference/features/fixes/winget"
+    "Action": "RestartExplorer"
   },
   "WPFPanelComputer": {
     "Content": "Computer Management (compmgmt.msc)",

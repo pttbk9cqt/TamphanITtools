@@ -49,38 +49,36 @@ function Invoke-WPFButton {
 
     # Other application and navigation buttons use the built-in handlers.
     Switch -Wildcard ($Button) {
-        "WPFTab?BT" {Invoke-WPFTab $Button}
+        "WPFTab?BT" {
+            Invoke-WPFTab $Button
+            if ($Button -eq 'WPFTab3BT') {
+                Invoke-WPFMAS
+            }
+        }
+        "WPFOpenWindowsUpdate" {Invoke-WPFUpdatePanel -Target WindowsUpdate}
+        "WPFOpenStoreDownloads" {Invoke-WPFUpdatePanel -Target StoreDownloads}
+        "WPFFixesWinget" {Invoke-WPFFixesWinget}
         "WPFInstall" {Invoke-WPFInstall}
         "WPFUninstall" {Invoke-WPFUnInstall}
         "WPFInstallUpgrade" {Invoke-WPFInstallUpgrade}
-        "WPFStandard" {Invoke-WPFPresets "Standard" -checkboxfilterpattern "WPFTweak*"}
-        "WPFMinimal" {Invoke-WPFPresets "Minimal" -checkboxfilterpattern "WPFTweak*"}
-        "WPFAdvanced" {Invoke-WPFPresets "Advanced" -checkboxfilterpattern "WPFTweak*"}
+        "WPFSelectAllTweaks" {
+            $keys = @($sync.configs.tweaks.PSObject.Properties | Where-Object {
+                $_.Name -like 'WPFTweaks*' -and (-not $_.Value.Type -or $_.Value.Type -eq 'CheckBox')
+            } | ForEach-Object { $_.Name })
+            Invoke-WPFPresets -preset $keys -imported $true -checkboxfilterpattern "WPFTweak*"
+        }
         "WPFClearTweaksSelection" {Invoke-WPFPresets -imported $true -checkboxfilterpattern "WPFTweak*"}
         "WPFClearInstallSelection" {Invoke-WPFPresets -imported $true -checkboxfilterpattern "WPFInstall*"}
         "WPFtweaksbutton" {Invoke-WPFtweaksbutton}
-        "WPFOOSUbutton" {Invoke-WPFOOSU}
-        "WPFAddUltPerf" {Invoke-WPFUltimatePerformance -Enable}
-        "WPFRemoveUltPerf" {Invoke-WPFUltimatePerformance}
         "WPFundoall" {Invoke-WPFundoall}
         "WPFGetInstalled" {Invoke-WPFGetInstalled -CheckBox "winget"}
-        "WPFGetInstalledTweaks" {Invoke-WPFGetInstalled -CheckBox "tweaks"}
         "WPFInstallSelectedAppx" {Invoke-WPFAppxInstall}
         "WPFRemoveSelectedAppx" {Invoke-WPFAppxRemoval}
-        "WPFDefaultAppxSelection" {Invoke-WPFPresets "AppxDefault" -checkboxfilterpattern "WPFAppx*"}
         "WPFSelectAllAppx" {
             $sync.configs.appxHashtable.Keys | ForEach-Object {$sync.$_.IsChecked = $true}
         }
         "WPFClearAppxSelection" {
             $sync.configs.appxHashtable.Keys | ForEach-Object {$sync.$_.IsChecked = $false}
-        }
-        "WPFGetInstalledAppx" {
-            $installedAppxPackages = Get-WinUtilInstalledAPPX
-            foreach ($appx in $sync.configs.appxHashtable.GetEnumerator()) {
-                if ($appx.Value.PackageId -in $installedAppxPackages) {
-                    $sync.$($appx.Key).IsChecked = $true
-                }
-            }
         }
         "WPFCloseButton" {$sync.Form.Close(); Write-Host "Bye bye!"}
         "WPFMinimizeButton" {[Windows.SystemCommands]::MinimizeWindow($sync.Form)}
@@ -91,6 +89,5 @@ function Invoke-WPFButton {
                 [Windows.SystemCommands]::RestoreWindow($sync.Form)
             }
         }
-        "WPFselectedAppsButton" {$sync.selectedAppsPopup.IsOpen = -not $sync.selectedAppsPopup.IsOpen}
     }
 }

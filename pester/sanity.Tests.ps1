@@ -71,6 +71,7 @@ if ($failed.Count -gt 0) {
 Describe "PowerShell source sanity" {
     $scriptCases = @(
         "Compile.ps1",
+        "Build-Portable.ps1",
         "windev.ps1",
         "scripts\start.ps1",
         "scripts\main.ps1"
@@ -92,6 +93,7 @@ Describe "PowerShell source sanity" {
     It "parses WinUtil source files with Windows PowerShell when available" {
         $sourcePaths = @(
             Join-Path $script:repoRoot "Compile.ps1"
+            Join-Path $script:repoRoot "Build-Portable.ps1"
             Join-Path $script:repoRoot "windev.ps1"
             Join-Path $script:repoRoot "scripts\start.ps1"
             Join-Path $script:repoRoot "scripts\main.ps1"
@@ -173,7 +175,7 @@ Describe "Compiled WinUtil sanity" {
         $content = Get-Content -Path $script:compiledPath -Raw
         $orderedSnippets = @(
             '$sync.version =',
-            'function Add-SelectedAppsMenuItem',
+            'function Close-WinUtilRunspacePool',
             ('$sync.configs.applications = @' + "'"),
             ('$inputXML = @' + "'"),
             '$commonKeyEvents = {'
